@@ -1,1 +1,13 @@
 version: "3.7"
+networks:
+  dorun-deploy:
+    driver: bridge;
+services:
+  app:
+    image: name-after-build
+    networks:
+      - dorun-deploy
+    restart: always
+    ports:
+      - 8080:8080
+    container_name: dorun-app-dev-deploy
