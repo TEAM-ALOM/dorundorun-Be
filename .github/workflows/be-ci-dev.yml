@@ -1,0 +1,41 @@
+name: BE CI For Dev
+
+on:
+  pull_request:
+    branches: ["dev"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      host port: ${{secrets.MYSQL_DB_PORT}}
+      container port: ${{secrets.MYSQL_DB_PORT}}
+      database user: ${{secrets.MYSQL_DB_NAME}}
+      mysql password: ${{secrets.MYSQL_DB_PASSWORD}}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-write-only: true
+
+      - name: Grant Execute Permission For Gradlew
+        run:  chmod +x gradlew
+
+      - name: Build With Gradle
+        run:  ./gradlew bootjar
+
+      - name: Run code
+        run:  ./gradlew --info
+
+      
+          
