@@ -1,8 +1,8 @@
 package com.alom.dorundorunbe.domain.mypage.service;
 
+import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDTO;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordRepository;
-import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDTO;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
