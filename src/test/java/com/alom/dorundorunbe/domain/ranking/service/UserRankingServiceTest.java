@@ -72,4 +72,48 @@ class UserRankingServiceTest {
 
         userRankingService.updateGrades(amateurRanking.getId());
     }
+    @Test
+    @DisplayName("사용자 포인트 변경 후 등수 업데이트")
+    void updateUserRankingPointAndNotify_ShouldUpdateRankingWhenUserPointChanges() {
+        //기존 등수 확인
+        userRankingService.updateGrades(amateurRanking.getId());
+
+        UserRanking testUserRanking = userRankings.stream()
+                .filter(ur -> ur.getUser().equals(testUser))
+                .findFirst()
+                .orElseThrow();
+
+        Long initialRank = testUserRanking.getGrade();
+
+
+        //기존 등수가 null이면 테스트 중단
+        assertThat(initialRank).isNotNull();
+
+        //User5의 포인트를 대폭 증가시켜 1등 만듦
+        double newPoint = 30.0;
+        testUserRanking.addPoint(newPoint);
+        testUserRanking.updateAveragePoint();
+
+
+        when(userRankingRepository.findByRankingId(amateurRanking.getId())).thenReturn(userRankings);
+
+
+        userRankingService.updateGrades(amateurRanking.getId());
+
+
+        List<UserRanking> updatedRankings = userRankingRepository.findByRankingId(amateurRanking.getId());
+        UserRanking updatedUserRanking = updatedRankings.stream()
+                .filter(ur -> ur.getUser().equals(testUser))
+                .findFirst()
+                .orElseThrow();
+
+        Long updatedRank = updatedUserRanking.getGrade();
+
+
+        //등수가 올라갔는지 확인
+        assertThat(updatedRank).isNotNull();
+        assertThat(updatedRank).isEqualTo(1); //1등
+
+    }
+
 }
