@@ -164,4 +164,38 @@ class UserRankingServiceTest {
                 .convertAndSend(eq("/sub/ranking/" + amateurRanking.getId()), any(RankingResponseDto.class));
     }
 
+    @Test
+    @DisplayName("기존 2개의 포인트에서 3번째 포인트가 추가될 때 등수 업데이트 발생")
+    void updateUserRankingPointAndNotify_ShouldUpdate_WhenThirdPointIsAdded() {
+        // Given
+        User user = User.builder()
+                .id(99L)
+                .nickname("TestUser")
+                .tier(Tier.AMATEUR)
+                .build();
+
+        UserRanking userRanking = UserRanking.create(user);
+        userRanking.confirmRanking(amateurRanking);
+
+
+        userRanking.addPoint(15.0);
+        userRanking.addPoint(20.0);
+
+        when(userRankingRepository.findByUserId(user.getId())).thenReturn(Optional.of(userRanking));
+        when(userRankingRepository.findByRankingId(any())).thenReturn(List.of(userRanking));
+
+
+        userRankingService.updateUserRankingPointAndNotify(user.getId(), 18.0);
+
+
+        assertThat(userRanking.getAveragePoint()).isNotNull();
+
+
+        verify(userRankingRepository, atLeastOnce()).findByRankingId(any());
+
+
+        verify(messagingTemplate, atLeastOnce())
+                .convertAndSend(eq("/sub/ranking/" + amateurRanking.getId()), any(RankingResponseDto.class));
+    }
+
 }
