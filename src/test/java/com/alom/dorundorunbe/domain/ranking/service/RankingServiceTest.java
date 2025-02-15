@@ -89,4 +89,17 @@ class RankingServiceTest {
         assertThat(user.getRankingParticipationDate()).isNotNull(); // 배치고사 시작되었는지 확인
         verify(userRepository, times(1)).findById(1L); // 사용자 조회 실행 검증
     }
+
+    @Test
+    @DisplayName("이미 랭킹에 참가한 사용자는 예외가 발생해야 한다")
+    void handleRankingParticipation_ShouldThrowException_IfUserAlreadyParticipated() {
+        // Given
+        user.setRankingParticipated();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        // When & Then
+        assertThatThrownBy(() -> rankingService.handleRankingParticipation(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.RANKING_ALREADY_PARTICIPATED.getMessage());
+    }
 }
