@@ -39,7 +39,7 @@ public class UserRankingDto {
                 .points(userRanking.getPoints().stream()
                         .map(RankingPoint::getPoint)
                         .toList())
-                .createdAt(userRanking.getCreatedAt().toString())
+                .createdAt(userRanking.getCreatedAt() != null ? userRanking.getCreatedAt().toString() : "N/A")
                 .userInfoDto(UserInfoDto.of(userRanking.getUser()))
                 .build();
     }

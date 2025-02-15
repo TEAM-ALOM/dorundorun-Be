@@ -52,7 +52,7 @@ public class RankingService { //랭킹 참가, 랭킹 스케줄 로직
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        if (userRankingRepository.existsByUser(user)) {
+        if (user.isRankingParticipated()) {
             throw new BusinessException(ErrorCode.RANKING_ALREADY_PARTICIPATED);
         }
 
@@ -67,9 +67,7 @@ public class RankingService { //랭킹 참가, 랭킹 스케줄 로직
 
     }
 
-    /**
-     * ✅ 배치고사 진행 여부 확인 및 처리
-     */
+
     private void checkPlacementTest(User user) {
 
 
@@ -102,9 +100,7 @@ public class RankingService { //랭킹 참가, 랭킹 스케줄 로직
         user.setTier(assignedTier);
     }
 
-    /**
-     * ✅ 랭킹 참가 처리
-     */
+
     private void joinRanking(User user) {
         Ranking ranking = rankingRepository.findByTier(user.getTier())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RANKING_NOT_FOUND));

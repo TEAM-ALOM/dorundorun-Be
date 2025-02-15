@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -26,15 +27,16 @@ public class UserRankingService {
     @Transactional
     public void createUserRanking(User user, Ranking ranking) {
 
-        boolean alreadyParticipated = userRankingRepository.existsByUserAndRanking(user, ranking);
-        if (alreadyParticipated) {
+        if (user.isRankingParticipated()) {
             throw new BusinessException(ErrorCode.USER_ALREADY_IN_RANKING);
         }
 
 
-        UserRanking userRanking = UserRanking.create(user, ranking);
+
+        UserRanking userRanking = UserRanking.create(user);
         userRanking.confirmRanking(ranking);
         userRankingRepository.save(userRanking);
+        user.setRankingParticipated();
 
 
     }
@@ -54,10 +56,16 @@ public class UserRankingService {
         UserRanking userRanking = userRankingRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RANKING_NOT_FOUND));
 
-        // 추가 포인트 등록
         userRanking.addPoint(point);
-        if(userRanking.getPoints().size()>=3){
-            userRanking.updateAveragePoint();
+        if(userRanking.getPoints().size() < 3){
+            return;
+        }
+
+        Double averagePoint = userRanking.getAveragePoint();
+        Double newAvgPoint = userRanking.updateAveragePoint();
+
+        if (Objects.equals(averagePoint, newAvgPoint)) {
+            return;
         }
         Long rankingId = userRanking.getRanking().getId();
 
@@ -78,19 +86,20 @@ public class UserRankingService {
                 .sorted(Comparator.comparingDouble(UserRanking::getAveragePoint).reversed())
                 .toList();
 
-        double previousPoint = -1;
+        Double previousPoint = null;
         long rank = 0;
 
         for (int i = 0; i < validParticipants.size(); i++) {
             UserRanking userRanking = validParticipants.get(i);
 
-            if (i == 0 || !userRanking.getAveragePoint().equals(previousPoint)) {
+            if (i == 0 || !Objects.equals(userRanking.getAveragePoint(), previousPoint)) {
                 rank = i + 1;
             }
 
-            if (!userRanking.getGrade().equals(rank)) {
+            if (userRanking.getGrade() == null || !userRanking.getGrade().equals(rank)) {
                 userRanking.updateGrade(rank);
             }
+
             previousPoint = userRanking.getAveragePoint();
         }
     }
