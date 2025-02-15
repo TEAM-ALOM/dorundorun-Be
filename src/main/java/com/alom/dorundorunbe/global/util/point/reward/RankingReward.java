@@ -7,27 +7,28 @@ import java.util.Arrays;
 
 @Getter
 public enum RankingReward {
-    FIRST_PLACE(1, 1000, 30),
-    SECOND_PLACE(2, 500, 20),
-    THIRD_PLACE(3, 300, 10),
-    FOURTH_PLACE(4, 100, 5),
-    OTHER(0, 0, 0);
+    FIRST_PLACE(1L, 1000, 30),
+    SECOND_PLACE(2L, 500, 20),
+    THIRD_PLACE(3L, 300, 10),
+    FOURTH_PLACE(4L, 100, 5),
+    FIFTH_PLACE(5L, 50, 2),
+    NO_REWARD(null, 0, 0);
 
-    private final long grade;
+    private final Long grade;
     private final long baseCash;
     private final double baseLp;
 
-    RankingReward(long grade, long baseCash, double baseLp) {
+    RankingReward(Long grade, long baseCash, double baseLp) {
         this.grade = grade;
         this.baseCash = baseCash;
         this.baseLp = baseLp;
     }
 
-    public static RankingReward getRewardByGrade(long grade) {
+    public static RankingReward getRewardByGrade(Long grade) {
         return Arrays.stream(values())
                 .filter(reward -> reward.grade == grade)
                 .findFirst()
-                .orElse(OTHER);
+                .orElse(NO_REWARD);
     }
 
     public long calculateCash(Tier tier) {

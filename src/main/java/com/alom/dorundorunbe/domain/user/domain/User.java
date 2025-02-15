@@ -94,5 +94,12 @@ public class User extends BaseEntity {
         this.lp += lpPoints;
     }
 
+    public void setRankingParticipated(){
+        this.isRankingParticipated = true;
+    }
+    public void resetRankingParticipated(){
+        this.isRankingParticipated = false;
+    }
+
 
 }
