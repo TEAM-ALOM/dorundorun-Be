@@ -66,4 +66,13 @@ class RankingServiceTest {
                 .tier(Tier.AMATEUR)
                 .build();
     }
+    private RunningRecord mockRunningRecord(int elapsedTime) {
+        return RunningRecord.builder()
+                .user(user)
+                .distance(5.0)
+                .elapsedTime(elapsedTime)
+                .startTime(LocalDateTime.now().minusMinutes(30))
+                .endTime(LocalDateTime.now().minusMinutes(5))
+                .build();
+    }
 }
