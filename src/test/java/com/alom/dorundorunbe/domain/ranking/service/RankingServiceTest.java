@@ -102,4 +102,32 @@ class RankingServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining(ErrorCode.RANKING_ALREADY_PARTICIPATED.getMessage());
     }
+
+    @Test
+    @DisplayName("배치 상태에서 5km 기록이 3회 미만이면 예외 발생")
+    void handleRankingParticipation_ShouldThrowException_IfRecordCountIsLessThanThree() {
+        LocalDateTime beforeStart = LocalDateTime.now(); // 실행 직전 시간 저장
+        user.startRankingParticipation(); // 랭킹 참여 시작 (현재 시간으로 설정됨)
+        LocalDateTime afterStart = LocalDateTime.now();  // 실행 직후 시간 저장
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(runningRecordRepository.countByUserAndDistanceAndCreatedAtAfter(
+                user, 5.0, user.getRankingParticipationDate())).thenReturn(2L); // 기록 부족
+
+        // When & Then
+        assertThatThrownBy(() -> rankingService.handleRankingParticipation(1L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining(ErrorCode.RANKING_MINIMUM_RECORDS_NOT_MET.getMessage());
+
+        verify(runningRecordRepository, times(1))
+                .countByUserAndDistanceAndCreatedAtAfter(user, 5.0, user.getRankingParticipationDate());
+
+
+        assertThat(user.getRankingParticipationDate()).isNotNull();
+
+
+        assertThat(user.getRankingParticipationDate())
+                .isAfterOrEqualTo(beforeStart)
+                .isBeforeOrEqualTo(afterStart.plusSeconds(1)); // 1초 이내 차이가 나도록 설정
+    }
 }
