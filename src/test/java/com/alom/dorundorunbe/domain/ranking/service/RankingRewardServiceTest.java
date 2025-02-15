@@ -95,4 +95,37 @@ class RankingRewardServiceTest {
         assertThat(ranking1.getParticipants()).containsExactlyInAnyOrder(userRanking1, userRanking2);
         assertThat(ranking2.getParticipants()).containsExactlyInAnyOrder(userRanking3, userRanking4);
     }
+
+    @Test
+    @DisplayName("주간 보상 지급 후 랭킹 참가자 삭제 및 참여 상태 초기화 검증")
+    void testProcessWeeklyRewards() {
+
+        doAnswer(invocation -> {
+            Long rankingId = invocation.getArgument(0);
+            List<UserRanking> rankings = userRankingRepository.findWithUserByRankingId(rankingId);
+
+            for (UserRanking userRanking : rankings) {
+                userRanking.getUser().resetRankingParticipated();
+            }
+            return null;
+        }).when(pointService).giveRankingRewardToUsersByRanking(anyLong());
+
+
+        rankingRewardService.processWeeklyRewards();
+
+
+        verify(pointService, times(1)).giveRankingRewardToUsersByRanking(rankingId1);
+        verify(pointService, times(1)).giveRankingRewardToUsersByRanking(rankingId2);
+
+
+        verify(userRankingRepository, times(1)).deleteByRankingId(rankingId1);
+        verify(userRankingRepository, times(1)).deleteByRankingId(rankingId2);
+
+
+        assertThat(user1.isRankingParticipated()).isFalse();
+        assertThat(user2.isRankingParticipated()).isFalse();
+        assertThat(user3.isRankingParticipated()).isFalse();
+        assertThat(user4.isRankingParticipated()).isFalse();
+
+    }
 }
