@@ -198,4 +198,37 @@ class UserRankingServiceTest {
                 .convertAndSend(eq("/sub/ranking/" + amateurRanking.getId()), any(RankingResponseDto.class));
     }
 
+    @Test
+    @DisplayName("기존 3개 포인트보다 낮은 4번째 포인트 추가 시 업데이트 없이 리턴")
+    void testNoUpdateWhenLowerFourthPointAdded() {
+        // Given (테스트 데이터 준비)
+        User user = User.builder()
+                .id(99L)
+                .nickname("TestUser")
+                .tier(Tier.AMATEUR)
+                .build();
+
+        UserRanking userRanking = UserRanking.create(user);
+        userRanking.confirmRanking(amateurRanking);
+
+
+        userRanking.addPoint(100.0);
+        userRanking.addPoint(90.0);
+        userRanking.addPoint(80.0);
+        Double originalAvgPoint = userRanking.updateAveragePoint();
+        Long userId = user.getId();
+
+
+        when(userRankingRepository.findByUserId(userId)).thenReturn(Optional.of(userRanking));
+
+
+        userRankingService.updateUserRankingPointAndNotify(userId, 60.0);
+
+
+        assertThat(userRanking.getAveragePoint()).isEqualTo(originalAvgPoint); // 평균 값이 그대로여야 함
+
+        // updateGrades()가 호출되지 않아야 함
+        verify(userRankingRepository, never()).findByRankingId(anyLong());
+    }
+
 }
