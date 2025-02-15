@@ -75,4 +75,18 @@ class RankingServiceTest {
                 .endTime(LocalDateTime.now().minusMinutes(5))
                 .build();
     }
+
+    @Test
+    @DisplayName("랭킹 참가 시 배치고사가 필요한 경우, 랭킹 참여 날짜가 설정된다")
+    void handleRankingParticipation_ShouldStartPlacementTest_IfRankingParticipationDateIsNull() {
+        // Given
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        // When
+        rankingService.handleRankingParticipation(1L);
+
+        // Then
+        assertThat(user.getRankingParticipationDate()).isNotNull(); // 배치고사 시작되었는지 확인
+        verify(userRepository, times(1)).findById(1L); // 사용자 조회 실행 검증
+    }
 }
