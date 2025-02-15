@@ -89,4 +89,10 @@ class RankingRewardServiceTest {
         return build;
 
     }
+    @Test
+    @DisplayName("랭킹 참가자 리스트에 정상적으로 추가되는지 검증")
+    void testParticipantsAreAddedToRanking() {
+        assertThat(ranking1.getParticipants()).containsExactlyInAnyOrder(userRanking1, userRanking2);
+        assertThat(ranking2.getParticipants()).containsExactlyInAnyOrder(userRanking3, userRanking4);
+    }
 }
