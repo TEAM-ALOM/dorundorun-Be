@@ -168,4 +168,42 @@ class RankingServiceTest {
         verify(rankingRepository, times(1)).findByTier(user.getTier());
         verify(userRankingService, times(1)).createUserRanking(user, ranking);
     }
+
+    @Test
+    @DisplayName("handleRankingParticipation : 평균 시간이 1200초 미만이어도 AMATEUR 티어에 배정되는지 확인(배치고사 특성 상 아무리 잘 뛰어도 최대 아마추어)")
+    void handleRankingParticipation_thresholdTest_assignsAmateur() {
+
+        user.setRankingParticipationDate(LocalDateTime.now().minusDays(3));
+
+
+        List<RunningRecord> records = List.of(
+                mockRunningRecord(1100),
+                mockRunningRecord(1150),
+                mockRunningRecord(1200)
+        );
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(runningRecordRepository.countByUserAndDistanceAndCreatedAtAfter(eq(user), eq(5.0), eq(user.getRankingParticipationDate())))
+                .thenReturn(3L);
+        when(runningRecordRepository.findTop3FastestRecordsAfterParticipation(eq(user), eq(5.0), eq(user.getRankingParticipationDate()), any()))
+                .thenReturn(records);
+        when(rankingRepository.findByTier(any(Tier.class))).thenReturn(Optional.of(ranking));
+
+        doAnswer(invocation -> {
+            User mockedUser = invocation.getArgument(0);
+            mockedUser.setRankingParticipated();
+            return null;
+        }).when(userRankingService).createUserRanking(any(User.class), any(Ranking.class));
+
+
+        rankingService.handleRankingParticipation(1L);
+
+
+        assertThat(user.getTier()).isNotNull();
+        assertThat(user.getTier()).isEqualTo(Tier.determineTier(1500));
+        assertThat(user.isRankingParticipated()).isTrue();
+
+        verify(rankingRepository, times(1)).findByTier(user.getTier());
+        verify(userRankingService, times(1)).createUserRanking(user, ranking);
+    }
 }
