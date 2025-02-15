@@ -15,9 +15,7 @@ import java.util.Optional;
 public interface UserRankingRepository extends JpaRepository<UserRanking, Long> {
 
 
-    boolean existsByUserAndRanking(User user, Ranking ranking);
 
-    boolean existsByUser(User user);
 
     Optional<UserRanking> findByUserId(Long userId);
 

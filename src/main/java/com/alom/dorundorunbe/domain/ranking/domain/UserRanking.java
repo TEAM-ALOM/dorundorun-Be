@@ -39,7 +39,7 @@ public class UserRanking extends BaseEntity {
     @Builder.Default
     private List<RankingPoint> points = new ArrayList<>();
 
-    public static UserRanking create(User user, Ranking ranking) {
+    public static UserRanking create(User user) {
 
         return UserRanking.builder()
                 .user(user)
@@ -62,11 +62,12 @@ public class UserRanking extends BaseEntity {
 
 
     }
-    public void updateAveragePoint() {
+    public Double updateAveragePoint() {
         this.averagePoint = points.stream()
                 .mapToDouble(RankingPoint::getPoint)
                 .average()
                 .orElse(0.0);
+        return averagePoint;
     }
 
     public void updateGrade(Long grade){
