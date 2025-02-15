@@ -116,4 +116,52 @@ class UserRankingServiceTest {
 
     }
 
+    @Test
+    @DisplayName("사용자 포인트 변경 후 등수 업데이트 및 웹소켓 전송 확인")
+    void updateUserRankingPointAndNotify_ShouldUpdateRankingAndSendWebSocketMessage() {
+
+        userRankingService.updateGrades(amateurRanking.getId());
+
+        UserRanking testUserRanking = userRankings.stream()
+                .filter(ur -> ur.getUser().equals(testUser))
+                .findFirst()
+                .orElseThrow();
+
+        Long initialRank = testUserRanking.getGrade();
+
+        assertThat(initialRank).isNotNull();
+
+
+        double newPoint = 30.0;
+        testUserRanking.addPoint(newPoint);
+        testUserRanking.updateAveragePoint();
+
+
+        when(userRankingRepository.findByRankingId(amateurRanking.getId())).thenReturn(userRankings);
+        when(userRankingRepository.findByUserId(testUser.getId())).thenReturn(Optional.of(testUserRanking));
+
+
+        userRankingService.updateUserRankingPointAndNotify(testUser.getId(), newPoint);
+
+
+        userRankingService.updateGrades(amateurRanking.getId());
+
+
+        List<UserRanking> updatedRankings = userRankingRepository.findByRankingId(amateurRanking.getId());
+        UserRanking updatedUserRanking = updatedRankings.stream()
+                .filter(ur -> ur.getUser().equals(testUser))
+                .findFirst()
+                .orElseThrow();
+
+        Long updatedRank = updatedUserRanking.getGrade();
+
+
+        assertThat(updatedRank).isNotNull();
+        assertThat(updatedRank).isLessThan(initialRank);
+
+
+        verify(messagingTemplate, times(1))
+                .convertAndSend(eq("/sub/ranking/" + amateurRanking.getId()), any(RankingResponseDto.class));
+    }
+
 }
