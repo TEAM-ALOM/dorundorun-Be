@@ -130,4 +130,42 @@ class RankingServiceTest {
                 .isAfterOrEqualTo(beforeStart)
                 .isBeforeOrEqualTo(afterStart.plusSeconds(1)); // 1초 이내 차이가 나도록 설정
     }
+
+    @Test
+    @DisplayName("배치고사 통과 후 티어가 결정되고, 랭킹 방에 배정되며, 랭킹 참가 상태가 true로 변경된다")
+    void handleRankingParticipation_ShouldAssignTierAndJoinRanking() {
+
+        user.setRankingParticipationDate(LocalDateTime.now().minusDays(3));
+
+
+        List<RunningRecord> records = List.of(
+                mockRunningRecord(1500), // 25분
+                mockRunningRecord(1600), // 26분 40초
+                mockRunningRecord(1400)  // 23분 20초
+        );
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(runningRecordRepository.countByUserAndDistanceAndCreatedAtAfter(eq(user), eq(5.0), eq(user.getRankingParticipationDate())))
+                .thenReturn(3L); // 3개 이상 기록 있음
+        when(runningRecordRepository.findTop3FastestRecordsAfterParticipation(eq(user), eq(5.0), eq(user.getRankingParticipationDate()), any()))
+                .thenReturn(records); // 상위 3개 기록 반환
+        when(rankingRepository.findByTier(any(Tier.class))).thenReturn(Optional.of(ranking)); // 티어 기반 랭킹 조회
+
+        doAnswer(invocation -> {
+            User mockedUser = invocation.getArgument(0);
+            mockedUser.setRankingParticipated();
+            return null;
+        }).when(userRankingService).createUserRanking(any(User.class), any(Ranking.class));
+
+        // When
+        rankingService.handleRankingParticipation(1L);
+
+        // Then
+        assertThat(user.getTier()).isNotNull();
+        assertThat(user.getTier()).isEqualTo(Tier.determineTier(1500));
+        assertThat(user.isRankingParticipated()).isTrue();
+
+        verify(rankingRepository, times(1)).findByTier(user.getTier());
+        verify(userRankingService, times(1)).createUserRanking(user, ranking);
+    }
 }
