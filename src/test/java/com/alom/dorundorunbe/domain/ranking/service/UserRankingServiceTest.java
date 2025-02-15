@@ -231,4 +231,40 @@ class UserRankingServiceTest {
         verify(userRankingRepository, never()).findByRankingId(anyLong());
     }
 
+    @Test
+    @DisplayName("포인트가 1개에서 2개가 될 경우, 평균 점수가 업데이트되지만 3개가 아니므로 updateGrades()는 호출되지 않음")
+    void testAddingSecondPointDoesNotTriggerGradeUpdate() {
+
+        User user = User.builder()
+                .id(100L)
+                .nickname("TestUser")
+                .tier(Tier.AMATEUR)
+                .build();
+
+        UserRanking userRanking = UserRanking.create(user);
+        userRanking.confirmRanking(amateurRanking);
+
+
+        userRanking.addPoint(90.0);
+        Long userId = user.getId();
+
+
+        when(userRankingRepository.findByUserId(userId)).thenReturn(Optional.of(userRanking));
+
+
+        userRankingService.updateUserRankingPointAndNotify(userId, 80.0);
+
+        // Then
+        // 포인트 개수가 2개로 늘어났는지 확인
+        assertThat(userRanking.getPoints().size()).isEqualTo(2);
+
+        // 평균 점수가 null 유지
+        assertThat(userRanking.getAveragePoint()).isNull();
+
+
+        // updateGrades()가 호출되지 않았는지 확인
+        verify(userRankingRepository, never()).findByRankingId(anyLong());
+    }
+
+
 }
