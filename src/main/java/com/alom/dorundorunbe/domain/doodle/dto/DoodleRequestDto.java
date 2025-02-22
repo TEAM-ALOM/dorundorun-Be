@@ -28,9 +28,6 @@ public class DoodleRequestDto {
     @Positive(message = "목표 달성 인원 수는 0보다 커야 합니다.")
     private Integer goalParticipationCount;
 
-    @NotBlank(message = "비밀번호를 입력해 주세요.")
-    private String password;
-
     @NotNull(message = "최대 인원 수를 입력해주세요.")
     @Positive(message = "유효하지 않은 값입니다.")
     private int maxParticipant;

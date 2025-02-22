@@ -40,9 +40,6 @@ public class Doodle extends BaseEntity {
     private Integer goalParticipationCount;
 
     @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
     private int maxParticipant;
 
     @Column(nullable = false)
@@ -75,5 +72,6 @@ public class Doodle extends BaseEntity {
         return doodle.getParticipants().stream()
                 .anyMatch(participant -> participant.getUser().getId().equals(userId));
     }
+
 
 }

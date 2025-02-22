@@ -75,7 +75,6 @@ public class DoodleControllerTest {
                 .weeklyGoalCadence(2.0)
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
-                .password("testPassword")
                 .goalParticipationCount(10)
                 .maxParticipant(20)
                 .participants(new ArrayList<>())
@@ -90,7 +89,6 @@ public class DoodleControllerTest {
                 .weeklyGoalHeartRateZone(3)
                 .goalParticipationCount(10)
                 .maxParticipant(20)
-                .password("testPassword")
                 .userId(user.getId())
                 .build();
 
@@ -210,7 +208,6 @@ public class DoodleControllerTest {
                 .weeklyGoalPace(4.0)
                 .goalParticipationCount(15)
                 .maxParticipant(25)
-                .password("updatedPassword")
                 .userId(1L)
                 .build();
 
@@ -252,18 +249,17 @@ public class DoodleControllerTest {
     @WithMockUser(username = "runner123", roles = {"USER"})
     public void addParticipantToDoodle() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        when(doodleService.addParticipantToDoodle(eq(1L), eq(1L), eq("testPassword")))
+        when(doodleService.addParticipantToDoodle(eq(1L), eq(1L)))
                 .thenReturn(doodleResponseDto);
 
         mockMvc.perform(post("/doodle/{doodleId}/User/{userId}", 1L, 1L)
-                        .param("password", "testPassword")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(doodleRequestDto))
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("testDoodle"));
 
-        verify(doodleService, times(1)).addParticipantToDoodle(eq(1L), eq(1L), eq("testPassword"));
+        verify(doodleService, times(1)).addParticipantToDoodle(eq(1L), eq(1L));
     }
 
     @Test
@@ -361,22 +357,22 @@ public class DoodleControllerTest {
         verify(doodleService, times(1)).updateParticipantStatus(1L,1L, updatedStatus);
     }
 
-    @Test
-    @DisplayName("Put /{doodleId}/password} : 특정 Doodle의 비밀번호를 변경한다.")
-    @WithMockUser(username = "runner123", roles = {"USER"})
-    public void updateDoodlePassword() throws Exception {
-        String newPassword = "newSecurePassword";
-
-        when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
-        when(doodleService.updateDoodlePassword(eq(1L), eq(1L), eq(newPassword)))
-                .thenReturn(doodleResponseDto);
-        mockMvc.perform(put("/doodle/{doodleId}/password", 1L)
-                .param("userId", String.valueOf(user.getId()))
-                .param("newPassword", newPassword)
-                .contentType(MediaType.APPLICATION_JSON)
-                .with(csrf()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(doodleResponseDto.getId()))
-                .andExpect(jsonPath("$.name").value(doodleResponseDto.getName()));
-    }
+//    @Test
+//    @DisplayName("Put /{doodleId}/password} : 특정 Doodle의 비밀번호를 변경한다.")
+//    @WithMockUser(username = "runner123", roles = {"USER"})
+//    public void updateDoodlePassword() throws Exception {
+//        String newPassword = "newSecurePassword";
+//
+//        when(userRepository.findById(eq(1L))).thenReturn(Optional.of(user));
+//        when(doodleService.updateDoodlePassword(eq(1L), eq(1L), eq(newPassword)))
+//                .thenReturn(doodleResponseDto);
+//        mockMvc.perform(put("/doodle/{doodleId}/password", 1L)
+//                .param("userId", String.valueOf(user.getId()))
+//                .param("newPassword", newPassword)
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .with(csrf()))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$.id").value(doodleResponseDto.getId()))
+//                .andExpect(jsonPath("$.name").value(doodleResponseDto.getName()));
+//    }
 }

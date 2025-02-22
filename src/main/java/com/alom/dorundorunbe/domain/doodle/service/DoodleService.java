@@ -1,16 +1,17 @@
 package com.alom.dorundorunbe.domain.doodle.service;
 
+import ch.qos.logback.core.testUtil.RandomUtil;
 import com.alom.dorundorunbe.domain.doodle.domain.UserDoodleStatus;
-import com.alom.dorundorunbe.domain.doodle.dto.DoodleRequestDto;
-import com.alom.dorundorunbe.domain.doodle.dto.DoodleResponseDto;
-import com.alom.dorundorunbe.domain.doodle.dto.UserDoodleDto;
-import com.alom.dorundorunbe.domain.doodle.dto.UserDoodleRole;
+import com.alom.dorundorunbe.domain.doodle.dto.*;
 import com.alom.dorundorunbe.domain.doodle.repository.UserDoodleRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.repository.UserRepository;
 import com.alom.dorundorunbe.domain.doodle.domain.UserDoodle;
 import com.alom.dorundorunbe.domain.doodle.domain.Doodle;
 import com.alom.dorundorunbe.domain.doodle.repository.DoodleRepository;
+import com.alom.dorundorunbe.global.config.RedisConfig;
+import com.alom.dorundorunbe.global.util.CustomRandomUtil;
+import com.alom.dorundorunbe.global.util.RedisUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -32,13 +33,16 @@ public class DoodleService {
     private final UserDoodleRepository userDoodleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserDoodleService userDoodleService;
+    private final RedisConfig redisConfig;
+    private final RedisUtil redisUtil;
+
+    private static final String INVITE_LINK_PREFIX = "doodleId=%d";
 
     @Transactional
     public DoodleResponseDto createDoodle(DoodleRequestDto doodleRequestDto) { //doodle 생성 기능
         //Doodle 생성
         Doodle doodle = Doodle.builder()
                 .name(doodleRequestDto.getName())
-                .password(doodleRequestDto.getPassword())
                 .maxParticipant(doodleRequestDto.getMaxParticipant())
                 .participants(new ArrayList<>())
                 .isRunning(doodleRequestDto.isRunning())
@@ -114,7 +118,6 @@ public class DoodleService {
                 .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
         doodle.setName(doodleRequestDto.getName());
         doodle.setMaxParticipant(doodleRequestDto.getMaxParticipant());
-        doodle.setPassword(doodleRequestDto.getPassword());
         doodle.setRunning(doodleRequestDto.isRunning());
         doodle.setPublic(doodleRequestDto.isPublic());
         doodle.setGoalActive(doodleRequestDto.isGoalActive());
@@ -154,12 +157,12 @@ public class DoodleService {
     }
 
     @Transactional
-    public DoodleResponseDto addParticipantToDoodle(Long doodleId, Long userId, String password) { //참가자 추가
+    public DoodleResponseDto addParticipantToDoodle(Long doodleId, Long userId) { //참가자 추가
         Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException("Doodle not found"));
         //비밀번호 검증
-        if (!passwordEncoder.matches(password, doodle.getPassword())) {
-            throw new IllegalArgumentException("Wrong password");
-        }
+//        if (!passwordEncoder.matches(password, doodle.getPassword())) {
+//            throw new IllegalArgumentException("Wrong password");
+//        }
 
         //참가자 중복 체크
         if (doodle.IsDuplicatedParticipant(doodle, userId)) {
@@ -214,20 +217,19 @@ public class DoodleService {
         return UserDoodleDto.from(userDoodle);
     }
 
-    //doodle 비밀번호 변경
-    @Transactional
-    public DoodleResponseDto updateDoodlePassword(Long doodleId, Long userId, String newPassword) {
-        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException(("Doodle not found")));
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).orElseThrow(() -> new RuntimeException("UserDoodle not found"));
-        if (userDoodle.getRole() != UserDoodleRole.CREATOR) {
-            throw new IllegalArgumentException("비밀번호를 변경할 자격이 없습니다.");
-        }
-        String encodedPassword = passwordEncoder.encode(newPassword);
-        doodle.setPassword(encodedPassword);
-        Doodle updatedDoodle = doodleRepository.save(doodle);
-        return DoodleResponseDto.from(updatedDoodle);
-    }
+//    //doodle 비밀번호 변경
+//    @Transactional
+//    public DoodleResponseDto updateDoodlePassword(Long doodleId, Long userId, String newPassword) {
+//        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException(("Doodle not found")));
+//        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+//        UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).orElseThrow(() -> new RuntimeException("UserDoodle not found"));
+//        if (userDoodle.getRole() != UserDoodleRole.CREATOR) {
+//            throw new IllegalArgumentException("비밀번호를 변경할 자격이 없습니다.");
+//        }
+//        String encodedPassword = passwordEncoder.encode(newPassword);
+//        Doodle updatedDoodle = doodleRepository.save(doodle);
+//        return DoodleResponseDto.from(updatedDoodle);
+//    }
 
     //doodle 방에 포인트 지급
     @Transactional
@@ -249,6 +251,30 @@ public class DoodleService {
                 .collect(Collectors.toList());
     }
 
+    //Doodle방 초대 코드 생성 기능
+    public DoodleInviteCodeResponse generateDoodleInviteCode(Long doodleId){
+        Optional<String> link = redisUtil.getData(INVITE_LINK_PREFIX.formatted(doodleId), String.class);
+        if (link.isEmpty()){
+            String randomCode = CustomRandomUtil.generateRandomCode(10);
+            redisUtil.setData(INVITE_LINK_PREFIX.formatted(doodleId), randomCode);
+            redisUtil.setDataExpire(INVITE_LINK_PREFIX.formatted(doodleId), randomCode, RedisUtil.toTomorrow());
+            return new DoodleInviteCodeResponse(randomCode);
+        }
+        return new DoodleInviteCodeResponse(link.get());
+    }
+
+    //초대코드로 Doodle에 유저를 초대
+    public void joinDoodleByInviteCode(Long doodleId, Long userId, DoodleInviteCodeRequest request){
+        Optional<String> link = redisUtil.getData(INVITE_LINK_PREFIX.formatted(doodleId), String.class);
+
+        if (link.isPresent()){
+            if(!link.equals(request.code())) throw new IllegalArgumentException("NOT_MATCH_LINK");
+            addParticipantToDoodle(doodleId, userId);
+        }
+        else{
+            throw new IllegalArgumentException("EXPIRED_LINK");
+        }
+    }
 
 
 }
