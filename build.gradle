@@ -52,6 +52,9 @@ dependencies {
 
     //소켓
     implementation 'org.springframework.boot:spring-boot-starter-websocket:3.3.2'
+
+    //Redis 설정
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 tasks.named('test') {
