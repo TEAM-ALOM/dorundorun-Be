@@ -3,22 +3,22 @@ package com.alom.dorundorunbe.domain.doodle.service;
 import com.alom.dorundorunbe.domain.doodle.domain.Doodle;
 import com.alom.dorundorunbe.domain.doodle.domain.UserDoodle;
 import com.alom.dorundorunbe.domain.doodle.domain.UserDoodleStatus;
-import com.alom.dorundorunbe.domain.doodle.dto.DoodleRequestDto;
-import com.alom.dorundorunbe.domain.doodle.dto.DoodleResponseDto;
-import com.alom.dorundorunbe.domain.doodle.dto.UserDoodleDto;
-import com.alom.dorundorunbe.domain.doodle.dto.UserDoodleRole;
+import com.alom.dorundorunbe.domain.doodle.dto.*;
 import com.alom.dorundorunbe.domain.doodle.repository.DoodleRepository;
 import com.alom.dorundorunbe.domain.doodle.repository.UserDoodleRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.repository.UserRepository;
 import com.alom.dorundorunbe.global.enums.Tier;
+import com.alom.dorundorunbe.global.util.RedisUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -45,10 +46,10 @@ public class DoodleServiceTest {
     private DoodleRepository doodleRepository;
 
     @Mock
-    private PasswordEncoder passwordEncoder;
+    private UserDoodleService userDoodleService;
 
     @Mock
-    private UserDoodleService userDoodleService;
+    private RedisUtil redisUtil;
 
     @InjectMocks
     private DoodleService doodleService;
@@ -63,7 +64,7 @@ public class DoodleServiceTest {
     private static UserDoodle CreatorUserDoodle;
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
         user = User.builder()
                 .id(1L)
                 .nickname("runner123")
@@ -89,7 +90,6 @@ public class DoodleServiceTest {
                 .weeklyGoalPace(5.0)
                 .weeklyGoalHeartRateZone(3)
                 .goalParticipationCount(10)
-                .password("password1")
                 .maxParticipant(5)
                 .participants(new ArrayList<>())  // 리스트 비워놓음
                 .isGoalActive(true)
@@ -107,7 +107,6 @@ public class DoodleServiceTest {
                 .weeklyGoalPace(6.0)
                 .weeklyGoalHeartRateZone(3)
                 .goalParticipationCount(20)
-                .password("password2")
                 .maxParticipant(10)
                 .participants(new ArrayList<>())  // 리스트 비워놓음
                 .isGoalActive(true)
@@ -142,7 +141,6 @@ public class DoodleServiceTest {
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
                 .goalParticipationCount(10)
-                .password("testPassword")
                 .maxParticipant(10)
                 .userId(1L)
                 .isGoalActive(true)
@@ -168,7 +166,6 @@ public class DoodleServiceTest {
                 .weeklyGoalHeartRateZone(3)
                 .isPublic(true)
                 .isGoalActive(true)
-                .password("testPassword")
                 .maxParticipant(10)
                 .participants(new ArrayList<>())
                 .isRunning(true)
@@ -204,21 +201,21 @@ public class DoodleServiceTest {
 
     @Test
     @DisplayName("getAllDoodles : Doodle 전체 조회에 성공한다.")
-    public void getAllDoodles(){
+    public void getAllDoodles() {
         //given : DoodleRepository의 findAll()이 호출되었을 때 정의된 값 반환
         when(doodleRepository.findAll()).thenReturn(Arrays.asList(doodle1, doodle2));
         //when : getAllDoodles call
         List<DoodleResponseDto> doodleResponseDtos = doodleService.getAllDoodles();
         //then
         verify(doodleRepository, times(1)).findAll(); //findAll이 1번 호출되었는지
-        assert doodleResponseDtos.size()==2;
+        assert doodleResponseDtos.size() == 2;
         assert doodleResponseDtos.get(0).getName().equals("Doodle 1");
         assert doodleResponseDtos.get(1).getName().equals("Doodle 2");
     }
 
     @Test
     @DisplayName("getDoodleById : Doodle 조회에 성공한다.")
-    public void getDoodleById(){
+    public void getDoodleById() {
         //given
         when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1));
         //when
@@ -233,7 +230,7 @@ public class DoodleServiceTest {
 
     @Test
     @DisplayName("deleteDoodle : Doodle 삭제에 성공한다.")
-    public void deleteDoodle(){
+    public void deleteDoodle() {
         Doodle doodle = Doodle.builder()
                 .id(1L)
                 .name("Delete Test Doodle")
@@ -242,7 +239,6 @@ public class DoodleServiceTest {
                 .weeklyGoalCadence(2.0)
                 .weeklyGoalPace(3.0)
                 .goalParticipationCount(10)
-                .password("testPassword")
                 .maxParticipant(10)
                 .participants(new ArrayList<>())
                 .build();
@@ -259,7 +255,7 @@ public class DoodleServiceTest {
 
     @Test
     @DisplayName("updateDoodle : Doodle 수정에 성공한다.")
-    public void updateDoodle(){
+    public void updateDoodle() {
         Doodle oldDoodle = Doodle.builder()
                 .id(1L)
                 .name("Test Doodle")
@@ -269,7 +265,6 @@ public class DoodleServiceTest {
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
                 .goalParticipationCount(10)
-                .password("testPassword")
                 .maxParticipant(10)
                 .participants(new ArrayList<>())
                 .isGoalActive(true)
@@ -306,10 +301,10 @@ public class DoodleServiceTest {
     public void addParticipantToDoodle() {
         // When: Mockito Mock 설정
         when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1)); // doodleRepository Mock 설정
-        when(passwordEncoder.matches(eq("testPassword"), eq(doodle1.getPassword()))).thenReturn(true); // 비밀번호 체크 Mock 설정
+//        when(passwordEncoder.matches(eq("testPassword"), eq(doodle1.getPassword()))).thenReturn(true); // 비밀번호 체크 Mock 설정
 
         // Service 호출: 참가자 추가
-        DoodleResponseDto doodleResponseDto = doodleService.addParticipantToDoodle(doodle1.getId(), user.getId(), "testPassword");
+        DoodleResponseDto doodleResponseDto = doodleService.addParticipantToDoodle(doodle1.getId(), user.getId());
 
         // Then: 결과 검증
         assertNotNull(doodleResponseDto);  // DoodleResponseDto가 null이 아니어야 함
@@ -319,7 +314,7 @@ public class DoodleServiceTest {
 
     @Test
     @DisplayName("deleteParticipant : Doodle 참가자 삭제에 성공한다.")
-    public void deleteParticipant(){
+    public void deleteParticipant() {
         when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1));
         when(userDoodleRepository.findByDoodleAndUser(doodle1, user))
                 .thenReturn(Optional.of(userDoodle));
@@ -339,7 +334,7 @@ public class DoodleServiceTest {
 
     @Test
     @DisplayName("getParticipants : Doodle 참가자 전체 조회에 성공한다.")
-    public void getParticipants(){
+    public void getParticipants() {
         List<UserDoodle> userDoodleList = new ArrayList<>();
         userDoodleList.add(userDoodle);
         doodle1.setParticipants(userDoodleList);
@@ -352,12 +347,12 @@ public class DoodleServiceTest {
         assertEquals(1, participants.size());
         assertEquals(user.getId(), participants.get(0).getUserId());
 
-        verify(doodleRepository,times(1)).findById(1L);
+        verify(doodleRepository, times(1)).findById(1L);
     }
 
     @Test
     @DisplayName("updateParticipantStatus : Doodle 참가자 완료 상태 수정에 성공한다.")
-    public void updateParticipantStatus(){
+    public void updateParticipantStatus() {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(user));
         when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1));
         when(userDoodleRepository.findByDoodleAndUser(any(Doodle.class), any(User.class))).thenReturn(Optional.of(userDoodle));
@@ -372,24 +367,34 @@ public class DoodleServiceTest {
         verify(userDoodleRepository, times(1)).findByDoodleAndUser(any(Doodle.class), any(User.class));
     }
 
+//    @Test
+//    @DisplayName("updateDoodlePassword : Doodle 비밀번호 변경에 성공한다.")
+//    public void updateDoodlePassword(){
+//        String newPassword = "newSecurePassword";
+//        String encodedPassword = "encodedPassword";
+//
+//        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user2));
+//        when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1));
+//        when(userDoodleRepository.findByDoodleAndUser(any(Doodle.class), any(User.class))).thenReturn(Optional.of(CreatorUserDoodle));
+//        when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
+//        when(doodleRepository.save(any(Doodle.class))).thenReturn(doodle1);
+//
+//        DoodleResponseDto doodleResponseDto = doodleService.updateDoodlePassword(doodle1.getId(), user2.getId(), newPassword);
+//        assertNotNull(doodleResponseDto);
+//        assertEquals(doodle1.getId(), doodleResponseDto.getId());
+//        verify(passwordEncoder, times(1)).encode(newPassword);
+//        verify(doodleRepository, times(1)).save(doodle1);
+//    }
+
     @Test
-    @DisplayName("updateDoodlePassword : Doodle 비밀번호 변경에 성공한다.")
-    public void updateDoodlePassword(){
-        String newPassword = "newSecurePassword";
-        String encodedPassword = "encodedPassword";
+    @DisplayName("generateDoodleInviteCode : Doodle방 초대 코드 생성에 성공한다.")
+    public void generateDoodleInviteCode() {
+        when(redisUtil.getData(anyString(), eq(String.class))).thenReturn(Optional.of("testInviteCode"));
+        DoodleInviteCodeReponse doodleInviteCodeReponse = doodleService.generateDoodleInviteCode(doodle1.getId());
 
-        when(userRepository.findById(anyLong())).thenReturn(Optional.of(user2));
-        when(doodleRepository.findById(anyLong())).thenReturn(Optional.of(doodle1));
-        when(userDoodleRepository.findByDoodleAndUser(any(Doodle.class), any(User.class))).thenReturn(Optional.of(CreatorUserDoodle));
-        when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
-        when(doodleRepository.save(any(Doodle.class))).thenReturn(doodle1);
-
-        DoodleResponseDto doodleResponseDto = doodleService.updateDoodlePassword(doodle1.getId(), user2.getId(), newPassword);
-        assertNotNull(doodleResponseDto);
-        assertEquals(doodle1.getId(), doodleResponseDto.getId());
-        verify(passwordEncoder, times(1)).encode(newPassword);
-        verify(doodleRepository, times(1)).save(doodle1);
+        Optional<String> data = redisUtil.getData("doodleId=%d".formatted(doodle1.getId()), String.class);
+        assertNotNull(data);
+        assertTrue(data.isPresent());
+        assertThat(data.get()).isEqualTo(doodleInviteCodeReponse.code());
     }
-
-
 }
