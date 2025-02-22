@@ -390,7 +390,7 @@ public class DoodleServiceTest {
     @DisplayName("generateDoodleInviteCode : Doodle방 초대 코드 생성에 성공한다.")
     public void generateDoodleInviteCode() {
         when(redisUtil.getData(anyString(), eq(String.class))).thenReturn(Optional.of("testInviteCode"));
-        DoodleInviteCodeReponse doodleInviteCodeReponse = doodleService.generateDoodleInviteCode(doodle1.getId());
+        DoodleInviteCodeResponse doodleInviteCodeReponse = doodleService.generateDoodleInviteCode(doodle1.getId());
 
         Optional<String> data = redisUtil.getData("doodleId=%d".formatted(doodle1.getId()), String.class);
         assertNotNull(data);
