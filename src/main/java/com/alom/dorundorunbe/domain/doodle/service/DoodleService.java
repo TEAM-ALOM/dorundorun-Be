@@ -252,15 +252,15 @@ public class DoodleService {
     }
 
     //Doodle방 초대 코드 생성 기능
-    public DoodleInviteCodeReponse generateDoodleInviteCode(Long doodleId){
+    public DoodleInviteCodeResponse generateDoodleInviteCode(Long doodleId){
         Optional<String> link = redisUtil.getData(INVITE_LINK_PREFIX.formatted(doodleId), String.class);
         if (link.isEmpty()){
             String randomCode = CustomRandomUtil.generateRandomCode(10);
             redisUtil.setData(INVITE_LINK_PREFIX.formatted(doodleId), randomCode);
             redisUtil.setDataExpire(INVITE_LINK_PREFIX.formatted(doodleId), randomCode, RedisUtil.toTomorrow());
-            return new DoodleInviteCodeReponse(randomCode);
+            return new DoodleInviteCodeResponse(randomCode);
         }
-        return new DoodleInviteCodeReponse(link.get());
+        return new DoodleInviteCodeResponse(link.get());
     }
 
     //초대코드로 Doodle에 유저를 초대
