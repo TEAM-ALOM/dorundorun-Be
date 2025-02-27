@@ -1,7 +1,6 @@
 package com.alom.dorundorunbe.domain.ranking.service;
 
 import com.alom.dorundorunbe.domain.ranking.domain.*;
-import com.alom.dorundorunbe.domain.ranking.dto.RankingResponseDto;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketDto;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketUserDto;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
