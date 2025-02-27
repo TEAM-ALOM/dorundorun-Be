@@ -38,11 +38,10 @@ public class RankingController implements RankingControllerDocs{
     }
 
     /**
-     * 특정 Ranking에 User 추가
+     * User 티어에 맞는 랭킹 방 추가 혹인 배치고사
      */
-    @PostMapping("/{rankingId}/users/{userId}")
+    @PostMapping("/users/{userId}")
     public ResponseEntity<Void> addUserToRanking(
-            @PathVariable Long rankingId,
             @PathVariable Long userId
     ) {
         rankingService.handleRankingParticipation(userId);
