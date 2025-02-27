@@ -83,30 +83,5 @@ public class UserRankingService {
 
     }
 
-    public void updateGrades(Long rankingId) {
 
-        List<UserRanking> participants = userRankingRepository.findByRankingId(rankingId);
-
-        List<UserRanking> validParticipants = participants.stream()
-                .filter(userRanking -> userRanking.getAveragePoint() != null)
-                .sorted(Comparator.comparingDouble(UserRanking::getAveragePoint).reversed())
-                .toList();
-
-        Double previousPoint = null;
-        long rank = 0;
-
-        for (int i = 0; i < validParticipants.size(); i++) {
-            UserRanking userRanking = validParticipants.get(i);
-
-            if (i == 0 || !Objects.equals(userRanking.getAveragePoint(), previousPoint)) {
-                rank = i + 1;
-            }
-
-            if (userRanking.getGrade() == null || !userRanking.getGrade().equals(rank)) {
-                userRanking.updateGrade(rank);
-            }
-
-            previousPoint = userRanking.getAveragePoint();
-        }
-    }
 }
