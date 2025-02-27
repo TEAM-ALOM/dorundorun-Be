@@ -4,8 +4,10 @@ import com.alom.dorundorunbe.domain.ranking.domain.Ranking;
 import com.alom.dorundorunbe.domain.ranking.domain.UserRanking;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingResponseDto;
 import com.alom.dorundorunbe.domain.ranking.dto.UserRankingDto;
+import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
+import com.alom.dorundorunbe.global.enums.Tier;
 import com.alom.dorundorunbe.global.exception.BusinessException;
 import com.alom.dorundorunbe.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.util.Objects;
 public class UserRankingService {
     private final UserRankingRepository userRankingRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RankingCacheRepository rankingCacheRepository;
 
 
     @Transactional
@@ -67,14 +70,17 @@ public class UserRankingService {
         if (Objects.equals(averagePoint, newAvgPoint)) {
             return;
         }
-        Long rankingId = userRanking.getRanking().getId();
+        Ranking ranking = userRanking.getRanking();
+        Long rankingId = ranking.getId();
+        Tier rankingTier = ranking.getTier();
 
 
-        updateGrades(rankingId);
-        //추후 redis 캐쉬 적용 필요해보임
-        RankingResponseDto rankingDto = new RankingResponseDto(userRanking.getRanking());
+        // Redis Sorted Set에 사용자의 최신 평균 점수를 업데이트
+        rankingCacheRepository.saveUserRanking(rankingTier, userId, newAvgPoint);
 
-        messagingTemplate.convertAndSend("/sub/ranking/" + rankingId, rankingDto);
+        // 전체 방의 최신 순위를 계산하고 웹 소켓으로 전송
+        updateTierRankingAndNotify(rankingId, rankingTier);
+
     }
 
     public void updateGrades(Long rankingId) {
