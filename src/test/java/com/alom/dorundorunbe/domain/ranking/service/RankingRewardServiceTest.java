@@ -1,11 +1,9 @@
 package com.alom.dorundorunbe.domain.ranking.service;
 
 import com.alom.dorundorunbe.domain.ranking.domain.Ranking;
-import com.alom.dorundorunbe.domain.ranking.domain.UserRanking;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
-import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.global.enums.Tier;
 import com.alom.dorundorunbe.global.exception.BusinessException;
 import com.alom.dorundorunbe.global.util.point.service.PointService;
@@ -20,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
