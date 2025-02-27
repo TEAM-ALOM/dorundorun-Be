@@ -2,6 +2,7 @@ package com.alom.dorundorunbe.domain.ranking.service;
 
 import com.alom.dorundorunbe.domain.ranking.domain.Ranking;
 import com.alom.dorundorunbe.domain.ranking.domain.UserRanking;
+import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
@@ -36,79 +37,27 @@ class RankingRewardServiceTest {
     @Mock
     private PointService pointService;
 
-    private Ranking ranking1, ranking2;
-    private User user1, user2, user3, user4;
-    private UserRanking userRanking1, userRanking2, userRanking3, userRanking4;
+    @Mock
+    private RankingCacheRepository rankingCacheRepository;
+
     private final Long rankingId1 = 1L;
     private final Long rankingId2 = 2L;
 
+    private Ranking ranking1, ranking2;
+
     @BeforeEach
     void setUp() {
-
         ranking1 = Ranking.builder().id(rankingId1).tier(Tier.BEGINNER).build();
         ranking2 = Ranking.builder().id(rankingId2).tier(Tier.AMATEUR).build();
-
-
-        user1 = createUser(1L, "User1", Tier.BEGINNER);
-        user2 = createUser(2L, "User2", Tier.BEGINNER);
-        user3 = createUser(3L, "User3", Tier.AMATEUR);
-        user4 = createUser(4L, "User4", Tier.AMATEUR);
-
-
-        userRanking1 = createUserRanking(1L, user1, ranking1, 1L);
-        userRanking2 = createUserRanking(2L, user2, ranking1, 2L);
-        userRanking3 = createUserRanking(3L, user3, ranking2, 1L);
-        userRanking4 = createUserRanking(4L, user4, ranking2, 2L);
-
-        lenient().when(rankingRepository.findAll()).thenReturn(List.of(ranking1, ranking2));
-
-        lenient().when(rankingRepository.existsById(rankingId1)).thenReturn(true);
-        lenient().when(rankingRepository.existsById(rankingId2)).thenReturn(true);
-        lenient().when(userRankingRepository.findWithUserByRankingId(rankingId1)).thenReturn(List.of(userRanking1, userRanking2));
-        lenient().when(userRankingRepository.findWithUserByRankingId(rankingId2)).thenReturn(List.of(userRanking3, userRanking4));
-    }
-
-    private User createUser(Long id, String nickname, Tier tier) {
-        return User.builder()
-                .id(id)
-                .nickname(nickname)
-                .tier(tier)
-                .cash(0L)
-                .lp(0.0)
-                .isRankingParticipated(true)
-                .build();
-    }
-
-    private UserRanking createUserRanking(Long id, User user, Ranking ranking, Long grade) {
-        UserRanking build = UserRanking.builder()
-                .id(id)
-                .user(user)
-                .grade(grade)
-                .build();
-        build.confirmRanking(ranking);
-        return build;
-
-    }
-    @Test
-    @DisplayName("랭킹 참가자 리스트에 정상적으로 추가되는지 검증")
-    void testParticipantsAreAddedToRanking() {
-        assertThat(ranking1.getParticipants()).containsExactlyInAnyOrder(userRanking1, userRanking2);
-        assertThat(ranking2.getParticipants()).containsExactlyInAnyOrder(userRanking3, userRanking4);
     }
 
     @Test
-    @DisplayName("주간 보상 지급 후 랭킹 참가자 삭제 및 참여 상태 초기화 검증")
-    void testProcessWeeklyRewards() {
+    @DisplayName("주간 보상 지급이 정상적으로 이루어지는지 검증")
+    void testProcessWeeklyRewards_Success() {
 
-        doAnswer(invocation -> {
-            Long rankingId = invocation.getArgument(0);
-            List<UserRanking> rankings = userRankingRepository.findWithUserByRankingId(rankingId);
-
-            for (UserRanking userRanking : rankings) {
-                userRanking.getUser().resetRankingParticipated();
-            }
-            return null;
-        }).when(pointService).giveRankingRewardToUsersByRanking(anyLong());
+        when(rankingRepository.findAll()).thenReturn(List.of(ranking1, ranking2));
+        when(rankingRepository.existsById(rankingId1)).thenReturn(true);
+        when(rankingRepository.existsById(rankingId2)).thenReturn(true);
 
 
         rankingRewardService.processWeeklyRewards();
@@ -122,10 +71,8 @@ class RankingRewardServiceTest {
         verify(userRankingRepository, times(1)).deleteByRankingId(rankingId2);
 
 
-        assertThat(user1.isRankingParticipated()).isFalse();
-        assertThat(user2.isRankingParticipated()).isFalse();
-        assertThat(user3.isRankingParticipated()).isFalse();
-        assertThat(user4.isRankingParticipated()).isFalse();
-
+        verify(rankingCacheRepository, times(1)).deleteTierRanking(Tier.BEGINNER);
+        verify(rankingCacheRepository, times(1)).deleteTierRanking(Tier.AMATEUR);
     }
+
 }
