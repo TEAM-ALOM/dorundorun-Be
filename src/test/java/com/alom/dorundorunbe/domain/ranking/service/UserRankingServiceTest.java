@@ -3,6 +3,7 @@ package com.alom.dorundorunbe.domain.ranking.service;
 import com.alom.dorundorunbe.domain.ranking.domain.*;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingResponseDto;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketDto;
+import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketUserDto;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
@@ -280,6 +281,33 @@ class UserRankingServiceTest {
                 .convertAndSend(anyString(), any(RankingSocketDto.class));
 
         verify(userRankingRepository, never()).findByRankingId(anyLong());
+    }
+
+    @Test
+    @DisplayName("grade가 -1인 참가자가 null로 처리되는지 검증")
+    void updateTierRankingAndNotify_ShouldConvertMinusOneToNull() {
+        // Given: 10명의 사용자가 존재하며 초기 점수가 -1.0
+        Ranking ranking = Ranking.create(Tier.AMATEUR);
+        ReflectionTestUtils.setField(ranking, "id", 1L);
+
+        Set<ZSetOperations.TypedTuple<Object>> rankingSet = new HashSet<>();
+        for (int i = 1; i <= 10; i++) {
+            rankingSet.add(createTuple((long) i, -1.0)); // 모든 점수를 -1로 저장(zset정렬 위함)
+        }
+
+        when(rankingCacheRepository.getTierRanking(Tier.AMATEUR)).thenReturn(rankingSet);
+
+        // When: updateTierRankingAndNotify 호출
+        userRankingService.updateTierRankingAndNotify(1L, Tier.AMATEUR);
+
+
+        ArgumentCaptor<RankingSocketDto> captor = ArgumentCaptor.forClass(RankingSocketDto.class);
+        verify(messagingTemplate).convertAndSend(anyString(), captor.capture());
+
+        List<RankingSocketUserDto> participants = captor.getValue().getParticipants();
+        for (RankingSocketUserDto dto : participants) {
+            assertThat(dto.getAveragePoint()).isNull();
+        }
     }
 
 
