@@ -6,6 +6,7 @@ import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketDto;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketUserDto;
 import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
+import com.alom.dorundorunbe.domain.ranking.util.RankingCacheKeyUtil;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.global.enums.Tier;
 import com.alom.dorundorunbe.global.exception.BusinessException;
@@ -309,6 +310,36 @@ class UserRankingServiceTest {
             assertThat(dto.getAveragePoint()).isNull();
         }
     }
+
+    @Test
+    @DisplayName("사용자 10명 중 특정 사용자의 점수가 급등하여 1등이 되었을 때 전체 순위가 올바르게 업데이트되는지 검증")
+    void testRankingUpdateWhenUserScoreIncreases() {
+
+        when(rankingCacheRepository.getTierRanking(Tier.AMATEUR)).thenReturn(mockRankingSet);
+        when(userRankingRepository.findByUserId(5L)).thenReturn(Optional.of(userRankings.get(4))); // 5번 사용자
+
+        // 기존 1등 확인
+        Long previousTopUserId = mockRankingSet.stream()
+                .max(Comparator.comparingDouble(ZSetOperations.TypedTuple::getScore))
+                .map(ZSetOperations.TypedTuple::getValue)
+                .map(val -> (Long) val)
+                .orElseThrow();
+
+
+        userRankingService.updateUserRankingPointAndNotify(5L, 200.0);
+
+
+        assertThat(rankingCacheRepository.getTierRanking(Tier.AMATEUR))
+                .isNotEmpty()
+                .anyMatch(tuple -> (Long) tuple.getValue() == 5L && tuple.getScore() > previousTopUserId);
+
+
+        verify(messagingTemplate, times(1)).convertAndSend(
+                eq("/sub/ranking/" + RankingCacheKeyUtil.getTierRankingKey(Tier.AMATEUR)),
+                any(RankingSocketDto.class)
+        );
+    }
+
 
 
 
