@@ -130,6 +130,28 @@ public class UserRankingService {
         messagingTemplate.convertAndSend("/sub/ranking/" + tierRankingKey,
                 new RankingSocketDto(rankingId, tierRankingKey, userList));
     }
+    private Set<ZSetOperations.TypedTuple<Object>> refreshCacheFromDbIfEmpty(Long rankingId, Tier tier, Set<ZSetOperations.TypedTuple<Object>> rankingSet) {
+        if (rankingSet == null || rankingSet.isEmpty()) {
+            // DB에서 해당 랭킹 방의 사용자 랭킹 정보를 조회 (티어별로 조회)
+            List<UserRanking> userRankings = userRankingRepository.findByRankingId(rankingId);
+
+            if (userRankings.isEmpty()) {
+                return null;
+            }
+
+
+            for (UserRanking userRanking : userRankings) {
+                Double avgPoint = (userRanking.getAveragePoint() != null) ? userRanking.getAveragePoint() : -1.0;
+                rankingCacheRepository.saveUserRanking(tier, userRanking.getUser().getId(), avgPoint);
+            }
+
+            rankingSet = rankingCacheRepository.getTierRanking(tier);
+            if (rankingSet == null || rankingSet.isEmpty()) {
+                return null;
+            }
+        }
+        return rankingSet;
+    }
 
 
 }
