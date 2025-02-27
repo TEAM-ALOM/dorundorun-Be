@@ -7,6 +7,7 @@ import com.alom.dorundorunbe.domain.ranking.repository.RankingRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.global.enums.Tier;
+import com.alom.dorundorunbe.global.exception.BusinessException;
 import com.alom.dorundorunbe.global.util.point.service.PointService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -73,6 +75,26 @@ class RankingRewardServiceTest {
 
         verify(rankingCacheRepository, times(1)).deleteTierRanking(Tier.BEGINNER);
         verify(rankingCacheRepository, times(1)).deleteTierRanking(Tier.AMATEUR);
+    }
+
+    @Test
+    @DisplayName("랭킹 ID가 존재하지 않을 때 예외 발생 검증")
+    void testProcessWeeklyRewards_Fail_RankingNotFound() {
+
+        when(rankingRepository.findAll()).thenReturn(List.of(ranking1, ranking2));
+        when(rankingRepository.existsById(rankingId1)).thenReturn(false);
+
+
+        assertThatThrownBy(() -> rankingRewardService.processWeeklyRewards())
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("해당 랭킹을 찾을 수 없습니다.");
+
+
+        verify(userRankingRepository, never()).deleteByRankingId(rankingId1);
+        verify(userRankingRepository, never()).deleteByRankingId(rankingId2);
+
+
+        verify(rankingCacheRepository, never()).deleteTierRanking(any(Tier.class));
     }
 
 }
