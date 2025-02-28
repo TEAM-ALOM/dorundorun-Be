@@ -3,25 +3,30 @@ package com.alom.dorundorunbe.domain.ranking.service;
 import com.alom.dorundorunbe.domain.ranking.domain.Ranking;
 import com.alom.dorundorunbe.domain.ranking.domain.UserRanking;
 import com.alom.dorundorunbe.domain.ranking.dto.RankingResponseDto;
+import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketDto;
+import com.alom.dorundorunbe.domain.ranking.dto.RankingSocketUserDto;
 import com.alom.dorundorunbe.domain.ranking.dto.UserRankingDto;
+import com.alom.dorundorunbe.domain.ranking.repository.RankingCacheRepository;
 import com.alom.dorundorunbe.domain.ranking.repository.UserRankingRepository;
+import com.alom.dorundorunbe.domain.ranking.util.RankingCacheKeyUtil;
 import com.alom.dorundorunbe.domain.user.domain.User;
+import com.alom.dorundorunbe.global.enums.Tier;
 import com.alom.dorundorunbe.global.exception.BusinessException;
 import com.alom.dorundorunbe.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class UserRankingService {
     private final UserRankingRepository userRankingRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RankingCacheRepository rankingCacheRepository;
 
 
     @Transactional
@@ -67,40 +72,86 @@ public class UserRankingService {
         if (Objects.equals(averagePoint, newAvgPoint)) {
             return;
         }
-        Long rankingId = userRanking.getRanking().getId();
+        Ranking ranking = userRanking.getRanking();
+        Long rankingId = ranking.getId();
+        Tier rankingTier = ranking.getTier();
 
 
-        updateGrades(rankingId);
-        //추후 redis 캐쉬 적용 필요해보임
-        RankingResponseDto rankingDto = new RankingResponseDto(userRanking.getRanking());
+        // Redis Sorted Set에 사용자의 최신 평균 점수를 업데이트
+        rankingCacheRepository.saveUserRanking(rankingTier, userId, newAvgPoint);
 
-        messagingTemplate.convertAndSend("/sub/ranking/" + rankingId, rankingDto);
+        // 전체 방의 최신 순위를 계산하고 웹 소켓으로 전송
+        updateTierRankingAndNotify(rankingId, rankingTier);
+
     }
+    public void updateTierRankingAndNotify(Long rankingId, Tier tier) {
 
-    public void updateGrades(Long rankingId) {
 
-        List<UserRanking> participants = userRankingRepository.findByRankingId(rankingId);
 
-        List<UserRanking> validParticipants = participants.stream()
-                .filter(userRanking -> userRanking.getAveragePoint() != null)
-                .sorted(Comparator.comparingDouble(UserRanking::getAveragePoint).reversed())
-                .toList();
+        Set<ZSetOperations.TypedTuple<Object>> rankingSet = rankingCacheRepository.getTierRanking(tier);
 
-        Double previousPoint = null;
-        long rank = 0;
 
-        for (int i = 0; i < validParticipants.size(); i++) {
-            UserRanking userRanking = validParticipants.get(i);
 
-            if (i == 0 || !Objects.equals(userRanking.getAveragePoint(), previousPoint)) {
-                rank = i + 1;
+        rankingSet = refreshCacheFromDbIfEmpty(rankingId, tier, rankingSet);//cache 유실 시 db값 불러옴
+        if (rankingSet == null) return; // DB에도 데이터가 없으면 종료
+
+
+        List<RankingSocketUserDto> userList = new ArrayList<>();
+        long counter = 0;
+        Long rank = null;
+        Double previousScore = null;
+
+
+
+        for (ZSetOperations.TypedTuple<Object> tuple : rankingSet) {
+            counter++;
+            Long userId = (Long) tuple.getValue();
+            Double avgScore = tuple.getScore();
+
+
+            avgScore = (avgScore != null) ? avgScore : -1.0;
+
+
+            if (avgScore == -1.0) {
+                rank = null;
+            } else {
+
+                if (previousScore == null || !avgScore.equals(previousScore)) {
+                    rank = counter;
+                }
             }
 
-            if (userRanking.getGrade() == null || !userRanking.getGrade().equals(rank)) {
-                userRanking.updateGrade(rank);
-            }
+            Long finalRank = (avgScore == -1.0) ? null : rank;
 
-            previousPoint = userRanking.getAveragePoint();
+            userList.add(new RankingSocketUserDto(userId, (avgScore == -1.0 ? null : avgScore), finalRank));
+            previousScore = avgScore;
         }
+        String tierRankingKey = RankingCacheKeyUtil.getTierRankingKey(tier);
+        messagingTemplate.convertAndSend("/sub/ranking/" + tierRankingKey,
+                new RankingSocketDto(rankingId, tierRankingKey, userList));
     }
+    private Set<ZSetOperations.TypedTuple<Object>> refreshCacheFromDbIfEmpty(Long rankingId, Tier tier, Set<ZSetOperations.TypedTuple<Object>> rankingSet) {
+        if (rankingSet == null || rankingSet.isEmpty()) {
+            // DB에서 해당 랭킹 방의 사용자 랭킹 정보를 조회 (티어별로 조회)
+            List<UserRanking> userRankings = userRankingRepository.findByRankingId(rankingId);
+
+            if (userRankings.isEmpty()) {
+                return null;
+            }
+
+
+            for (UserRanking userRanking : userRankings) {
+                Double avgPoint = (userRanking.getAveragePoint() != null) ? userRanking.getAveragePoint() : -1.0;
+                rankingCacheRepository.saveUserRanking(tier, userRanking.getUser().getId(), avgPoint);
+            }
+
+            rankingSet = rankingCacheRepository.getTierRanking(tier);
+            if (rankingSet == null || rankingSet.isEmpty()) {
+                return null;
+            }
+        }
+        return rankingSet;
+    }
+
+
 }

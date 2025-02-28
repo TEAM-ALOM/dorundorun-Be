@@ -4,6 +4,7 @@ import com.alom.dorundorunbe.global.enums.Tier;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 @Getter
 public enum RankingReward {
@@ -26,7 +27,7 @@ public enum RankingReward {
 
     public static RankingReward getRewardByGrade(Long grade) {
         return Arrays.stream(values())
-                .filter(reward -> reward.grade == grade)
+                .filter(reward -> Objects.equals(reward.grade, grade))
                 .findFirst()
                 .orElse(NO_REWARD);
     }

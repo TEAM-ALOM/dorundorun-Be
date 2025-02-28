@@ -7,9 +7,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
-
+@RequestMapping("/ranking")
 public interface RankingControllerDocs {
 
     @Operation(
@@ -27,11 +28,11 @@ public interface RankingControllerDocs {
     ResponseEntity<RankingResponseDto> fetchRanking(@PathVariable Long rankingId);
 
     @Operation(
-            summary = "특정 Ranking에 User 추가",
-            description = "주어진 User ID를 특정 Ranking 방에 추가합니다."
+            summary = "User 티어에 맞는 랭킹 방 추가 혹인 배치고사",
+            description = "주어진 User ID의 티어에 맞는 Ranking 방에 추가합니다. 티어가 없다면 배치고사 진행"
     )
-    @PostMapping("/{rankingId}/users/{userId}")
-    ResponseEntity<Void> addUserToRanking(@PathVariable Long rankingId, @PathVariable Long userId);
+    @PostMapping("/users/{userId}")
+    ResponseEntity<Void> addUserToRanking(@PathVariable Long userId);
 
     @Operation(
             summary = "특정 Ranking의 User 기록 조회",
