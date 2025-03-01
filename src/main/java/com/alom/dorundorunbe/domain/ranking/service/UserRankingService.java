@@ -43,6 +43,8 @@ public class UserRankingService {
         userRankingRepository.save(userRanking);
         user.setRankingParticipated();
 
+        rankingCacheRepository.saveUserRanking(ranking.getTier(), user.getId(), -1.0);
+
 
     }
 
