@@ -1,12 +1,13 @@
 package com.alom.dorundorunbe.domain.mypage.service;
 
 import com.alom.dorundorunbe.domain.achievement.repository.UserAchievementRepository;
+import com.alom.dorundorunbe.domain.mypage.dto.MyPageRunningRecordResponse;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordRepository;
 import com.alom.dorundorunbe.domain.achievement.domain.UserAchievement;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.mypage.dto.AchievementResponse;
-import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDTO;
+import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDto;
 import com.alom.dorundorunbe.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,11 +26,14 @@ public class MyPageService {
 
     private final UserAchievementRepository userAchievementRepository;
 
-    public List<RunningRecord> getRunningRecords(String email) {
+    public List<MyPageRunningRecordResponse> getRunningRecords(String email) {
         User user = userService.findByEmail(email);
         List<RunningRecord> runningRecords = runningRecordRepository.findAllByUser(user);
         runningRecords.sort(Comparator.comparing(RunningRecord::getDate).reversed());
-        return runningRecords;
+
+        return runningRecords.stream()
+                .map(MyPageRunningRecordResponse::new)
+                .collect(Collectors.toList());
     }
 
     public List<AchievementResponse> getAchievements(String email) {
@@ -56,7 +60,7 @@ public class MyPageService {
         return userService.existsByNickname(nickName);
     }
 
-    public ResponseEntity<String> updateByEmail(UserUpdateDTO userDTO, String email) {
+    public ResponseEntity<String> updateByEmail(UserUpdateDto userDTO, String email) {
         User user = userService.findByEmail(email);
         if(userDTO.getNickname() == null)
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nickname is required");
@@ -67,10 +71,6 @@ public class MyPageService {
         return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
     }
 
-    public void updateNickname(String email, String nickname) {
-        User user = userService.findByEmail(email);
-        user.updateNickname(nickname);
-    }
 
     // soft delete -> refresh 토큰 삭제 로직 추가 필요
     public ResponseEntity<String> deleteUser(String email) {
