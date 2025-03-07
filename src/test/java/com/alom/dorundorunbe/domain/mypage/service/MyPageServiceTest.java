@@ -1,8 +1,9 @@
 package com.alom.dorundorunbe.domain.mypage.service;
 
+import com.alom.dorundorunbe.domain.mypage.dto.MyPageRunningRecordResponse;
+import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDto;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordRepository;
-import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDTO;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +43,7 @@ class MyPageServiceTest {
     @Test
     @DisplayName("사용자 정보 수정 성공")
     void updateUserSuccess(){
-        UserUpdateDTO userUpdateDTO = new UserUpdateDTO();
+        UserUpdateDto userUpdateDTO = new UserUpdateDto();
         userUpdateDTO.setNickname("newNickName");
 
         Mockito.when(userService.findByEmail(testUser.getEmail())).thenReturn(testUser);
@@ -60,7 +61,7 @@ class MyPageServiceTest {
     @Test
     @DisplayName("사용자 닉네임 수정 실패: 중복")
     void updateUserNickNameDuplicate() {
-        UserUpdateDTO userUpdateDTO = new UserUpdateDTO();
+        UserUpdateDto userUpdateDTO = new UserUpdateDto();
         userUpdateDTO.setNickname("newNickName");
 
         Mockito.when(userService.findByEmail(testUser.getEmail())).thenReturn(testUser);
@@ -88,12 +89,12 @@ class MyPageServiceTest {
         Mockito.when(runningRecordRepository.findAllByUser(testUser)).thenReturn(runningRecords);
 
         // When: 테스트 실행
-        List<RunningRecord> result = myPageService.getRunningRecords(testUser.getEmail());
+        List<MyPageRunningRecordResponse> result = myPageService.getRunningRecords(testUser.getEmail());
 
         // Then: 결과 검증
         assertEquals(2, result.size());
-        assertEquals(record1.getId(), result.get(0).getId());
-        assertEquals(record2.getId(), result.get(1).getId());
+        assertEquals(record1.getId(), result.get(0).getDate());
+        assertEquals(record2.getId(), result.get(1).getDate());
 
         // Mock 호출 검증
         Mockito.verify(userService, Mockito.times(1)).findByEmail(testUser.getEmail());

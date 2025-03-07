@@ -1,8 +1,9 @@
 package com.alom.dorundorunbe.domain.mypage.controller;
 
+import com.alom.dorundorunbe.domain.mypage.dto.MyPageRunningRecordResponse;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.mypage.dto.AchievementResponse;
-import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDTO;
+import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDto;
 import com.alom.dorundorunbe.domain.mypage.service.MyPageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,7 @@ class MyPageControllerTest {
                 .thenReturn(List.of(new AchievementResponse(1L, "testAchievement")));
         Mockito.when(myPageService.getUserRank(email)).thenReturn("TestRank");
         Mockito.when(myPageService.getRunningRecords(email))
-                .thenReturn(List.of(new RunningRecord())); //mock data 채워야 함.
+                .thenReturn(List.of(new MyPageRunningRecordResponse())); //mock data 채워야 함.
         Mockito.when(myPageService.getUserNickname(email)).thenReturn("TestNickname");
 
         mockMvc.perform(get("/mypage/"))
@@ -63,7 +64,7 @@ class MyPageControllerTest {
     void updateUserUpdateSuccess() throws Exception {
         String username = "testUser@test.com";
 
-        Mockito.when(myPageService.updateByEmail(any(UserUpdateDTO.class), eq(username)))
+        Mockito.when(myPageService.updateByEmail(any(UserUpdateDto.class), eq(username)))
                 .thenReturn(ResponseEntity.ok("User Update Success"));
 
         mockMvc.perform(put("/mypage/update")
