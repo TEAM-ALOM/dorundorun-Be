@@ -1,5 +1,6 @@
 package com.alom.dorundorunbe.domain.mypage.dto;
 
+import com.alom.dorundorunbe.domain.item.dto.EquippedItemResponseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -26,6 +27,9 @@ public class MyPageResponseDto {
 
     @Schema(description = "최근 런닝 기록들 리스트")
     private List<MyPageRunningRecordResponse> runningRecords;
+
+    @Schema(description = "현재 입고 있는 템들 리스트")
+    private List<EquippedItemResponseDto> equippedItems;
 
 
 }
