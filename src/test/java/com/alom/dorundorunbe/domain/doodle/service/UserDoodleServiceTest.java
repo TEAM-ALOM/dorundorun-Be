@@ -18,12 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -69,7 +70,7 @@ public class UserDoodleServiceTest {
                 .weeklyGoalCadence(3.0)
                 .participants(new ArrayList<>())
                 .isGoalActive(true)
-                .doodlePoint(0)
+                .doodlePoint(100)
                 .isRunning(true)
                 .weeklyGoalHeartRateZone(3)
                 .isPublic(true)
@@ -152,7 +153,7 @@ public class UserDoodleServiceTest {
         when(userDoodleRepository.findByDoodleAndUser(any(Doodle.class), any(User.class))).thenReturn(Optional.ofNullable(userDoodle));
         when(runningRecordRepository.findAllByUser(any(User.class))).thenReturn(runningRecordList);
 
-        UserDoodleDto resultDto = userDoodleService.isGoalAchieved(1L, 1L);
+        UserDoodleStatus userDoodleStatus = userDoodleService.isGoalAchieved(1L, 1L);
 
         double totalDistance = userDoodleService.getWeeklyTotalDistance(runningRecordList);
         int totalCount = userDoodleService.getWeeklyGoalCount(runningRecordList);
@@ -160,10 +161,7 @@ public class UserDoodleServiceTest {
         double totalAverageCadence = userDoodleService.getWeeklyAverageCadence(runningRecordList);
 //        double totalAverageHeartRate = userDoodleService.getWeeklyAverageHeartRate(runningRecordList);
 
-        assertNotNull(resultDto);
-        assertThat(resultDto.getStatus()).isEqualTo(userDoodle.getStatus());
-        assertThat(resultDto.getDoodleId()).isEqualTo(userDoodle.getDoodle().getId());
-        assertThat(resultDto.getUserId()).isEqualTo(userDoodle.getUser().getId());
+        assertThat(userDoodleStatus).isEqualTo(UserDoodleStatus.COMPLETED);
 
         assertThat(totalDistance).isEqualTo(3.0);
         assertThat(totalCount).isEqualTo(1);
@@ -176,5 +174,39 @@ public class UserDoodleServiceTest {
         verify(userDoodleRepository,times(1)).findByDoodleAndUser(doodle, user);
         verify(userDoodleRepository, times(1)).save(any(UserDoodle.class));
         verify(runningRecordRepository, times(1)).findAllByUser(any(User.class));
+    }
+
+    @Test
+    @DisplayName("getTop10DoodlePointsForUser : 유저가 참여한 두들런 중 상위 10개 포인트 방 반환에 성공한다.")
+    public void getTop10DoodlePointsForUser() {
+        List<Doodle> doodles = new ArrayList<>();
+        List<UserDoodle> userDoodles = new ArrayList<>();
+        for(int i=1;i<=15;i++){
+            Doodle doodle = new Doodle();
+            doodle.setName("Doodle " + i);
+            doodle.setDoodlePoint(100*i);
+            doodles.add(doodle);
+
+            UserDoodle userDoodle = UserDoodle.builder()
+                    .id((long) i+1)
+                    .user(user)
+                    .doodle(doodle)
+                    .status(UserDoodleStatus.PARTICIPATING)
+                    .role(UserDoodleRole.PARTICIPANT)
+                    .joinDate(LocalDate.now().minusDays(1))
+                    .build();
+
+            userDoodles.add(userDoodle);
+        }
+        //doodle을 점수순으로 정렬
+        doodles.sort(Comparator.comparingDouble(Doodle::getDoodlePoint).reversed());
+        when(userDoodleRepository.findTop10ByUserOrderByDoodlePointDesc(eq(user), any(Pageable.class)))
+                .thenReturn(doodles.subList(0,10));
+
+        List<Doodle> topDoodles = userDoodleRepository.findTop10ByUserOrderByDoodlePointDesc(user, Pageable.ofSize(10));
+        assertThat(topDoodles.size()).isEqualTo(10);
+        assertThat(topDoodles.get(0).getDoodlePoint()).isEqualTo(1500);
+        assertThat(topDoodles.get(9).getDoodlePoint()).isEqualTo(600);
+        verify(userDoodleRepository,times(1)).findTop10ByUserOrderByDoodlePointDesc(user, Pageable.ofSize(10));
     }
 }
