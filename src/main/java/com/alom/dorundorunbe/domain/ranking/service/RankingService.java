@@ -25,11 +25,9 @@ import java.util.Optional;
 @RequiredArgsConstructor 
 public class RankingService { //랭킹 참가, 랭킹 스케줄 로직
     private final RankingRepository rankingRepository;
-    private final UserRankingRepository userRankingRepository;
     private final UserRepository userRepository;
     private final UserRankingService userRankingService;
     private final RunningRecordRepository runningRecordRepository;
-    private final RankingRewardService rankingRewardService;
 
 
     @Transactional(readOnly = true)
@@ -127,11 +125,7 @@ public class RankingService { //랭킹 참가, 랭킹 스케줄 로직
                 .orElseThrow(() -> new BusinessException(ErrorCode.FAIL_PROCEED));
     }
 
-    //랭킹 보상 지급(일주일 단위로 지급되어야하고(스케줄러 이용) 사용자에게 lp와 cash 지급하고 deleteRankingRecords 호출
-    @Scheduled(cron = "0 0 0 * * MON") // 매주 월요일 00:00 실행
-    public void distributeWeeklyRewardsAndClearRankings() {
-        rankingRewardService.processWeeklyRewards();
-    }
+
     
 
 }

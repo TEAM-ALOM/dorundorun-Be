@@ -25,9 +25,6 @@ public class DoodleRequestDto {
     @Positive(message = "유효하지 않은 값입니다.")
     private Double weeklyGoalPace;
 
-    @Positive(message = "목표 달성 인원 수는 0보다 커야 합니다.")
-    private Integer goalParticipationCount;
-
     @NotNull(message = "최대 인원 수를 입력해주세요.")
     @Positive(message = "유효하지 않은 값입니다.")
     private int maxParticipant;

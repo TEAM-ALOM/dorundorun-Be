@@ -18,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -94,7 +96,7 @@ public class DoodleServiceTest {
                 .participants(new ArrayList<>())  // 리스트 비워놓음
                 .isGoalActive(true)
                 .isRunning(true)
-                .doodlePoint(0)
+                .doodlePoint(100)
                 .requiredTier(Tier.STARTER)
                 .build();
 
@@ -111,7 +113,7 @@ public class DoodleServiceTest {
                 .participants(new ArrayList<>())  // 리스트 비워놓음
                 .isGoalActive(true)
                 .isRunning(true)
-                .doodlePoint(0)
+                .doodlePoint(50)
                 .requiredTier(Tier.AMATEUR)
                 .build();
 
@@ -140,7 +142,6 @@ public class DoodleServiceTest {
                 .weeklyGoalCadence(2.0)
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
-                .goalParticipationCount(10)
                 .maxParticipant(10)
                 .userId(1L)
                 .isGoalActive(true)
@@ -148,7 +149,6 @@ public class DoodleServiceTest {
                 .isRunning(true)
                 .requiredTier(Tier.STARTER)
                 .build();
-
     }
 
     @Test
@@ -277,7 +277,6 @@ public class DoodleServiceTest {
                 .weeklyGoalCadence(3.0)
                 .weeklyGoalPace(4.0)
                 .weeklyGoalHeartRateZone(3)
-                .goalParticipationCount(20)
                 .maxParticipant(20)
                 .isGoalActive(true)
                 .isRunning(true)
@@ -397,4 +396,5 @@ public class DoodleServiceTest {
         assertTrue(data.isPresent());
         assertThat(data.get()).isEqualTo(doodleInviteCodeReponse.code());
     }
+
 }

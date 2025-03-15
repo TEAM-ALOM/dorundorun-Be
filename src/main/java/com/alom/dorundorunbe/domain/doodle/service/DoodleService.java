@@ -43,6 +43,7 @@ public class DoodleService {
         //Doodle 생성
         Doodle doodle = Doodle.builder()
                 .name(doodleRequestDto.getName())
+                .goalParticipationCount(0)
                 .maxParticipant(doodleRequestDto.getMaxParticipant())
                 .participants(new ArrayList<>())
                 .isRunning(doodleRequestDto.isRunning())
@@ -57,7 +58,6 @@ public class DoodleService {
           doodle.setWeeklyGoalCadence(doodleRequestDto.getWeeklyGoalCadence());
           doodle.setWeeklyGoalPace(doodleRequestDto.getWeeklyGoalPace());
           doodle.setWeeklyGoalHeartRateZone(doodleRequestDto.getWeeklyGoalHeartRateZone());
-          doodle.setGoalParticipationCount(doodleRequestDto.getGoalParticipationCount());
           doodle.setRequiredTier(doodleRequestDto.getRequiredTier());
           //위치 추가 필요
         }
@@ -128,7 +128,6 @@ public class DoodleService {
             doodle.setWeeklyGoalCadence(doodleRequestDto.getWeeklyGoalCadence());
             doodle.setWeeklyGoalPace(doodleRequestDto.getWeeklyGoalPace());
             doodle.setWeeklyGoalHeartRateZone(doodleRequestDto.getWeeklyGoalHeartRateZone());
-            doodle.setGoalParticipationCount(doodleRequestDto.getGoalParticipationCount());
             doodle.setRequiredTier(doodleRequestDto.getRequiredTier());
             //위치 추가 필요
         }
@@ -231,24 +230,17 @@ public class DoodleService {
 //        return DoodleResponseDto.from(updatedDoodle);
 //    }
 
-    //doodle 방에 포인트 지급
+    //doodle 방의 유저에게 포인트 지급
+
+    /**
+     *수정
+     */
     @Transactional
     public void addPointsToDoodle(Long doodleId, Long userId, double doodlePoints){
         Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(()->new RuntimeException("Doodle not found"));
         User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
         doodle.setDoodlePoint(doodlePoints);
         doodleRepository.save(doodle);
-    }
-
-    //Doodle 포인트 상위 10개 방의 포인트 반환
-    public List<Double> getTop10PointsForUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        Pageable pageable = PageRequest.of(0, 10);
-        List<Doodle> topDoodles = userDoodleRepository.findTop10ByUserOrderByDoodlePointDesc(user, pageable);
-
-        return topDoodles.stream()
-                .map(Doodle::getDoodlePoint)
-                .collect(Collectors.toList());
     }
 
     //Doodle방 초대 코드 생성 기능

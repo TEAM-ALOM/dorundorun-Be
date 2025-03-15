@@ -87,7 +87,6 @@ public class DoodleControllerTest {
                 .weeklyGoalCadence(2.0)
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
-                .goalParticipationCount(10)
                 .maxParticipant(20)
                 .userId(user.getId())
                 .build();
@@ -206,7 +205,6 @@ public class DoodleControllerTest {
                 .weeklyGoalCount(1)
                 .weeklyGoalCadence(3.0)
                 .weeklyGoalPace(4.0)
-                .goalParticipationCount(15)
                 .maxParticipant(25)
                 .userId(1L)
                 .build();
