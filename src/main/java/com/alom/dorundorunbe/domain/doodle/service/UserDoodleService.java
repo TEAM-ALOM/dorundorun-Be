@@ -12,6 +12,8 @@ import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordReposi
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -120,7 +122,7 @@ public class UserDoodleService {
 //    }
 
     //목표 전체 달성 여부 확인
-    public UserDoodleDto isGoalAchieved(Long doodleId, Long userId) {
+    public UserDoodleStatus isGoalAchieved(Long userId, Long doodleId) {
         Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException("Doodle not found"));
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).orElseThrow(() -> new RuntimeException("UserDoodle not found"));
@@ -135,6 +137,16 @@ public class UserDoodleService {
             userDoodle.setStatus(UserDoodleStatus.COMPLETED);
             userDoodleRepository.save(userDoodle);
         }
-        return UserDoodleDto.from(userDoodle);
+        return userDoodle.getStatus();
+    }
+
+    //유저가 참여한 두들런 중 포인트 상위 10개 방 반환
+    public List<Doodle> getTop10DoodlePointsForUser(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        Pageable pageable = PageRequest.of(0, 10);
+//        return topDoodles.stream()
+//                .map(Doodle::getDoodlePoint)
+//                .collect(Collectors.toList());
+        return userDoodleRepository.findTop10ByUserOrderByDoodlePointDesc(user, pageable);
     }
 }
