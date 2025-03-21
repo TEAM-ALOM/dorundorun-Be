@@ -11,7 +11,6 @@ import com.alom.dorundorunbe.domain.user.service.UserService;
 import com.alom.dorundorunbe.global.exception.BusinessException;
 import com.alom.dorundorunbe.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
