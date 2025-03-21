@@ -57,6 +57,11 @@ public enum ErrorCode {
   EMAIL_VERIFIED_FAILURE(HttpStatus.INTERNAL_SERVER_ERROR, "메일 인증에 실패하였습니다."),
   // 프로세스 오류
   FAIL_PROCEED(HttpStatus.INTERNAL_SERVER_ERROR, "프로세스 실행중 문제가 발생하였습니다."),
+
+  //마이페이지
+  EMPTY_NICKNAME(HttpStatus.BAD_REQUEST, "닉네임 칸이 비어있습니다."),
+  NICKNAME_DUPLICATE(HttpStatus.BAD_REQUEST, "닉네임 중복!"),
+
   // 정상
   SUCCESS(HttpStatus.OK, "SUCCESS");
 

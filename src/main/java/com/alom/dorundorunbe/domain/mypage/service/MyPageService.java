@@ -1,84 +1,68 @@
 package com.alom.dorundorunbe.domain.mypage.service;
 
-import com.alom.dorundorunbe.domain.achievement.repository.UserAchievementRepository;
+import com.alom.dorundorunbe.domain.achievement.service.AchievementService;
 import com.alom.dorundorunbe.domain.item.service.ItemService;
 import com.alom.dorundorunbe.domain.mypage.dto.MyPageResponseDto;
-import com.alom.dorundorunbe.domain.mypage.dto.MyPageRunningRecordResponse;
-import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
-import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordRepository;
-import com.alom.dorundorunbe.domain.achievement.domain.UserAchievement;
+import com.alom.dorundorunbe.domain.runningrecord.service.RunningRecordService;
 import com.alom.dorundorunbe.domain.user.domain.User;
-import com.alom.dorundorunbe.domain.mypage.dto.AchievementResponse;
 import com.alom.dorundorunbe.domain.mypage.dto.UserUpdateDto;
+import com.alom.dorundorunbe.domain.user.repository.UserRepository;
 import com.alom.dorundorunbe.domain.user.service.UserService;
+import com.alom.dorundorunbe.global.exception.BusinessException;
+import com.alom.dorundorunbe.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor
 public class MyPageService {
     private final UserService userService;
-    private final RunningRecordRepository runningRecordRepository;
-    private final UserAchievementRepository userAchievementRepository;
     private final ItemService itemService;
+    private final RunningRecordService runningRecordService;
+    private final AchievementService achievementService;
+    private final UserRepository userRepository;
 
+    @Transactional
     public MyPageResponseDto getMyPage(Long userId){
         User user = userService.findById(userId);
+        Pageable runningPage = PageRequest.of(0, 5, Sort.by("endTime").descending());
+        Pageable achievementPage = PageRequest.of(0, 5, Sort.by("id").descending());
         MyPageResponseDto myPageResponseDto = MyPageResponseDto.builder()
                 .email(user.getEmail())
-                .rank(user.getRanking().toString())
+                .rank(user.getRanking())
                 .nickname(user.getNickname())
-                .achievements(getAchievements(userId))
-                .runningRecords(getRunningRecords(userId))
+                .achievements(achievementService.findUserAchievement(userId, achievementPage))
+                .runningRecords(runningRecordService.findRunningRecords(userId, runningPage))
                 .equippedItems(itemService.findEquippedItemList(userId))
                 .build();
 
         return myPageResponseDto;
     }
 
-    public List<MyPageRunningRecordResponse> getRunningRecords(Long userId) {
-        User user = userService.findById(userId);
-        List<RunningRecord> runningRecords = runningRecordRepository.findAllByUser(user);
-        runningRecords.sort(Comparator.comparing(RunningRecord::getDate).reversed());
 
-        return runningRecords.stream()
-                .map(MyPageRunningRecordResponse::new)
-                .collect(Collectors.toList());
-    }
-
-    public List<AchievementResponse> getAchievements(Long userId) {
-        User user = userService.findById(userId);
-        List<UserAchievement> userAchievements = userAchievementRepository.findAllByUser(user);
-        return userAchievements.stream()
-                .map(ua->new AchievementResponse(
-                        ua.getAchievement().getId(),
-                        ua.getAchievement().getName()
-                ))
-                .collect(Collectors.toList());
-    }
-
-
-    public boolean checkNickNameDuplicate(String nickName) {
-        return userService.existsByNickname(nickName);
-    }
-
+    @Transactional
     public ResponseEntity<String> updateByEmail(UserUpdateDto userDTO, Long userId) {
         User user = userService.findById(userId);
         if(userDTO.getNickname() == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nickname is required");
-        if(checkNickNameDuplicate(userDTO.getNickname()))
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Nickname already exists");
+            throw new BusinessException(ErrorCode.EMPTY_NICKNAME);
+        if (userRepository.existsByNickname(userDTO.getNickname())) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATE);
+        }
+
         user.setNickname(userDTO.getNickname());
         userService.save(user);
         return ResponseEntity.status(HttpStatus.OK).body("User updated successfully");
     }
 
     // soft delete -> refresh 토큰 삭제 로직 추가 필요
+    @Transactional
     public ResponseEntity<String> deleteUser(Long userId) {
         User user = userService.findById(userId);
         userService.delete(user);
