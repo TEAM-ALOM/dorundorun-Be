@@ -1,8 +1,13 @@
 package com.alom.dorundorunbe.domain.mypage.dto;
 
+import com.alom.dorundorunbe.domain.achievement.dto.query.UserAchievementDto;
 import com.alom.dorundorunbe.domain.item.dto.EquippedItemResponseDto;
+import com.alom.dorundorunbe.domain.ranking.domain.Ranking;
+import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
 import java.util.List;
 
@@ -20,13 +25,13 @@ public class MyPageResponseDto {
     private String nickname;
 
     @Schema(description = "업적 리스트")
-    private List<AchievementResponse> achievements;
+    private Slice<UserAchievementDto> achievements;
 
     @Schema(description = "사용자 랭크")
-    private String rank;
+    private Ranking rank;
 
     @Schema(description = "최근 런닝 기록들 리스트")
-    private List<MyPageRunningRecordResponse> runningRecords;
+    private Page<RunningRecordResponseDto> runningRecords;
 
     @Schema(description = "현재 입고 있는 템들 리스트")
     private List<EquippedItemResponseDto> equippedItems;
