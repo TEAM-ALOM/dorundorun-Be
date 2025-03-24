@@ -6,25 +6,21 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "RunningRecord 생성 요청 DTO")
-public class RunningRecordRequestDto {
+@Schema(description = "RunningRecord 러닝 종료 요청 DTO")
+public class RunningRecordEndDto {
+    @Schema(description = "RunningRecord id", example = "1")
+    private Long id;
+
     @Schema(description = "User id", example = "1")
     private Long userId;
 
-    @Schema(description = "러닝 시작 시간", example = "2025-01-01T08:00:00Z")
-    private String startTime;
-
     @Schema(description = "러닝 종료 시간", example = "2025-01-01T08:30:00Z")
     private String endTime;
-
-    @Schema(description = "러닝 일자", example = "2025-01-01")
-    private String date;
 
     @Schema(description = "러닝 총 거리", example = "5000.0")
     private Double distance;

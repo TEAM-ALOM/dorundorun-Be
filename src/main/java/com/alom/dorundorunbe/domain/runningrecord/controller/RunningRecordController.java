@@ -1,7 +1,8 @@
 package com.alom.dorundorunbe.domain.runningrecord.controller;
 
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordRequestDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordEndDto;
 import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordStartDto;
 import com.alom.dorundorunbe.domain.runningrecord.service.RunningRecordService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -20,8 +21,13 @@ public class RunningRecordController implements RunningRecordControllerDocs {
     private final RunningRecordService runningRecordService;
 
     @PostMapping
-    public ResponseEntity<RunningRecordResponseDto> createRunningRecord(@RequestBody RunningRecordRequestDto requestDto){
-        return ResponseEntity.status(HttpStatus.CREATED).body(runningRecordService.saveRunningRecord(requestDto));
+    public ResponseEntity<RunningRecordResponseDto> createRunningRecord(@RequestBody RunningRecordStartDto startDto){
+        return ResponseEntity.status(HttpStatus.CREATED).body(runningRecordService.saveRunningRecord(startDto));
+    }
+
+    @PutMapping
+    public ResponseEntity<RunningRecordResponseDto> updateRunningRecord(@RequestBody RunningRecordEndDto endDto){
+        return ResponseEntity.status(HttpStatus.OK).body(runningRecordService.updateRunningRecord(endDto));
     }
 
     @GetMapping("/{id}")

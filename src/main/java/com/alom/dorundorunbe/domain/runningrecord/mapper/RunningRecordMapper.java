@@ -4,9 +4,8 @@ import com.alom.dorundorunbe.domain.item.dto.EquippedItemResponseDto;
 import com.alom.dorundorunbe.domain.runningrecord.domain.GpsCoordinate;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecordItem;
-import com.alom.dorundorunbe.domain.runningrecord.dto.GpsCoordinateDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordRequestDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.*;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -25,15 +24,21 @@ public interface RunningRecordMapper {
     @Mapping(target = "date", expression = "java(toStringDate(runningRecord.getDate()))")
     @Mapping(target = "items", expression = "java(mapItems(runningRecord.getItems()))")
     @Mapping(target = "gpsCoordinates", expression = "java(mapGpsCoordinates(runningRecord.getGpsCoordinates()))")
+    @Mapping(target = "isRunning", source = "running")
     RunningRecordResponseDto toResponseDto(RunningRecord runningRecord);
+
+    @BeanMapping(ignoreByDefault = true)
+    @Mapping(target = "startTime", expression = "java(toLocalDateTime(startDto.getStartTime()))")
+    @Mapping(target = "date", expression = "java(toLocalDate(startDto.getDate()))")
+    RunningRecord toEntityFromStartDto(RunningRecordStartDto startDto); // isRunning service에서 true 지정하기
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "pace", ignore = true)
     @Mapping(target = "gpsCoordinates", ignore = true)
-    @Mapping(target = "startTime", expression = "java(toLocalDateTime(requestDto.getStartTime()))")
-    @Mapping(target = "endTime", expression = "java(toLocalDateTime(requestDto.getEndTime()))")
-    @Mapping(target = "date", expression = "java(toLocalDate(requestDto.getDate()))")
-    RunningRecord toEntityFromRequestDto(RunningRecordRequestDto requestDto);
+    @Mapping(target = "startTime", ignore = true)
+    @Mapping(target = "date", ignore = true)
+    @Mapping(target = "endTime", expression = "java(toLocalDateTime(endDto.getEndTime()))")
+    void updateFromEndDto(RunningRecordEndDto endDto, @MappingTarget RunningRecord runningRecord); // isRunning service에서 false 지정하기
 
     default String toStringDate(LocalDate date){
         return date != null ? date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) : null;
