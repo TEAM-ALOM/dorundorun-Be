@@ -6,9 +6,7 @@ import com.alom.dorundorunbe.domain.item.dto.EquippedItemResponseDto;
 import com.alom.dorundorunbe.domain.item.service.ItemService;
 import com.alom.dorundorunbe.domain.runningrecord.domain.GpsCoordinate;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
-import com.alom.dorundorunbe.domain.runningrecord.dto.GpsCoordinateDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordRequestDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.*;
 import com.alom.dorundorunbe.domain.runningrecord.mapper.GpsCoordinateMapper;
 import com.alom.dorundorunbe.domain.runningrecord.mapper.RunningRecordMapper;
 import com.alom.dorundorunbe.domain.runningrecord.repository.GpsCoordinateRepository;
@@ -70,26 +68,47 @@ public class RunningRecordServiceTest {
     void saveRunningRecord() {
         // given
         Long userId = 1L;
-        RunningRecordRequestDto requestDto = new RunningRecordRequestDto();
-        requestDto.setUserId(userId);
+        RunningRecordStartDto startDto = new RunningRecordStartDto();
+        startDto.setUserId(userId);
 
         User user = new User();
         RunningRecord runningRecord = new RunningRecord();
         RunningRecordResponseDto responseDto = new RunningRecordResponseDto();
-        List<GpsCoordinateDto> gpsCoordinateDtos = List.of(
-                new GpsCoordinateDto(37.7749, -122.4194, "2025-01-01T08:00:00Z")
-        );
-        requestDto.setGpsCoordinates(gpsCoordinateDtos);
-
-        GpsCoordinate gpsCoordinate = new GpsCoordinate();
 
         when(userService.findById(userId)).thenReturn(user);
-        when(runningRecordMapper.toEntityFromRequestDto(requestDto)).thenReturn(runningRecord);
-        when(gpsCoordinateMapper.toEntity(gpsCoordinateDtos.get(0))).thenReturn(gpsCoordinate);
+        when(runningRecordMapper.toEntityFromStartDto(startDto)).thenReturn(runningRecord);
         when(runningRecordMapper.toResponseDto(runningRecord)).thenReturn(responseDto);
 
         // when
-        RunningRecordResponseDto result = runningRecordService.saveRunningRecord(requestDto);
+        RunningRecordResponseDto result = runningRecordService.saveRunningRecord(startDto);
+
+        // then
+        verify(runningRecordRepository).save(runningRecord);
+        assertEquals(responseDto, result);
+    }
+
+    @Test
+    @DisplayName("updateRunningRecord : RunningRecord 업데이트")
+    void updateRunningRecord() {
+        // given
+        RunningRecordEndDto endDto = new RunningRecordEndDto();
+        endDto.setId(1L);
+        GpsCoordinateDto gpsDto = new GpsCoordinateDto(37.7749, -122.4194, "2025-01-01T08:00:00Z");
+        endDto.setGpsCoordinates(List.of(gpsDto));
+
+        RunningRecord runningRecord = new RunningRecord();
+        User user = new User();
+        runningRecord.setUser(user);
+        RunningRecordResponseDto responseDto = new RunningRecordResponseDto();
+
+        GpsCoordinate gpsCoordinate = new GpsCoordinate();
+        when(gpsCoordinateMapper.toEntity(gpsDto)).thenReturn(gpsCoordinate);
+
+        when(runningRecordRepository.findById(1L)).thenReturn(Optional.of(runningRecord));
+        when(runningRecordMapper.toResponseDto(runningRecord)).thenReturn(responseDto);
+
+        // when
+        RunningRecordResponseDto result = runningRecordService.updateRunningRecord(endDto);
 
         // then
         verify(runningRecordRepository).save(runningRecord);

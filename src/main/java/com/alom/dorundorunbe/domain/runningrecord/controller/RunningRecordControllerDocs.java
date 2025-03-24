@@ -1,9 +1,8 @@
 package com.alom.dorundorunbe.domain.runningrecord.controller;
 
-import com.alom.dorundorunbe.domain.challenge.dto.ChallengeRequestDto;
-import com.alom.dorundorunbe.domain.challenge.dto.ChallengeResponseDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordRequestDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordEndDto;
 import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordStartDto;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -23,8 +22,30 @@ public interface RunningRecordControllerDocs {
                 
                 - `Long userId` : User id
                 - `String startTime` : 러닝 시작 시간 (형식 예시 : "2025-01-01T08:00:00Z")
-                - `String endTime` : 러닝 종료 시간 (형식 예시 : "2025-01-01T08:00:00Z")
                 - `String date` : 러닝 일자 (형식 예시 : "2025-01-01")
+                    
+                
+                
+                **반환값:**
+                
+                - `RunningRecordResponseDto` : 생성된 러닝 기록 정보              
+                """
+    )
+    public ResponseEntity<RunningRecordResponseDto> createRunningRecord(@RequestBody RunningRecordStartDto startDto);
+
+    // 수정하기
+    @Operation(
+            summary = "러닝 기록 업데이트",
+            description = """
+                **러닝 기록 업데이트**
+                
+                러닝이 종료되어 기록을 업데이트합니다.
+                
+                **입력 파라미터:**
+                
+                - `Long id` : RunningRecord id
+                - `Long userId` : User id
+                - `String endTime` : 러닝 종료 시간 (형식 예시 : "2025-01-01T08:00:00Z")
                 - `Double distance` : 러닝 총 거리 (단위 : 미터)
                 - `Integer cadence` : 케이던스
                 - `Integer elapsedTime` : 러닝 총 시간 (단위 : 초)
@@ -39,10 +60,10 @@ public interface RunningRecordControllerDocs {
                 
                 **반환값:**
                 
-                - `RunningRecordResponseDto` : 생성된 러닝 기록 정보              
+                - `RunningRecordResponseDto` : 수정된 러닝 기록 정보              
                 """
     )
-    public ResponseEntity<RunningRecordResponseDto> createRunningRecord(@RequestBody RunningRecordRequestDto requestDto);
+    public ResponseEntity<RunningRecordResponseDto> updateRunningRecord(@RequestBody RunningRecordEndDto endDto);
 
     @Operation(
             summary = "러닝 기록 상세 조회",

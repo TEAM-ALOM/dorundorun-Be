@@ -6,9 +6,7 @@ import com.alom.dorundorunbe.domain.item.service.ItemService;
 import com.alom.dorundorunbe.domain.runningrecord.domain.GpsCoordinate;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecordItem;
-import com.alom.dorundorunbe.domain.runningrecord.dto.GpsCoordinateDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordRequestDto;
-import com.alom.dorundorunbe.domain.runningrecord.dto.RunningRecordResponseDto;
+import com.alom.dorundorunbe.domain.runningrecord.dto.*;
 import com.alom.dorundorunbe.domain.runningrecord.mapper.GpsCoordinateMapper;
 import com.alom.dorundorunbe.domain.runningrecord.mapper.RunningRecordMapper;
 import com.alom.dorundorunbe.domain.runningrecord.repository.GpsCoordinateRepository;
@@ -62,14 +60,25 @@ public class RunningRecordService {
     }
 
     @Transactional
-    public RunningRecordResponseDto saveRunningRecord(RunningRecordRequestDto requestDto){
-        User user = userService.findById(requestDto.getUserId());
-        RunningRecord runningRecord = runningRecordMapper.toEntityFromRequestDto(requestDto);
+    public RunningRecordResponseDto saveRunningRecord(RunningRecordStartDto startDto){
+        User user = userService.findById(startDto.getUserId());
+        RunningRecord runningRecord = runningRecordMapper.toEntityFromStartDto(startDto);
         runningRecord.setUser(user);
+        runningRecord.setRunning(true);
+        runningRecordRepository.save(runningRecord);
+        return runningRecordMapper.toResponseDto(runningRecord);
+    }
+
+    @Transactional
+    public RunningRecordResponseDto updateRunningRecord(RunningRecordEndDto endDto){
+        RunningRecord runningRecord = runningRecordRepository.findById(endDto.getId())
+                .orElseThrow(() -> new IllegalStateException("Running record with id "+endDto.getId()+" does not exist"));
+        runningRecordMapper.updateFromEndDto(endDto, runningRecord);
         runningRecord.calculatePace();
+        runningRecord.setRunning(false);
         runningRecordRepository.save(runningRecord);
         setEquippedItems(runningRecord);
-        setGpsCoordinate(runningRecord, requestDto.getGpsCoordinates());
+        setGpsCoordinate(runningRecord, endDto.getGpsCoordinates());
         return runningRecordMapper.toResponseDto(runningRecord);
     }
 

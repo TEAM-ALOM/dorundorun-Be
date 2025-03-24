@@ -43,6 +43,9 @@ public class RunningRecordResponseDto {
     @Schema(description = "평균 심장박동수", example = "120")
     private Integer heartRate;
 
+    @Schema(description = "러닝 중 플래그", example = "true")
+    private boolean isRunning;
+
     @Schema(description = "착용 item 정보")
     private List<EquippedItemResponseDto> items = new ArrayList<>();
 
