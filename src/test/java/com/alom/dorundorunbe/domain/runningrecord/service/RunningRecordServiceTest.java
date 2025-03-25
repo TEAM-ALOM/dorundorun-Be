@@ -28,8 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class RunningRecordServiceTest {
@@ -72,6 +71,7 @@ public class RunningRecordServiceTest {
         startDto.setUserId(userId);
 
         User user = new User();
+        user.setRunning(false);
         RunningRecord runningRecord = new RunningRecord();
         RunningRecordResponseDto responseDto = new RunningRecordResponseDto();
 
@@ -85,6 +85,7 @@ public class RunningRecordServiceTest {
         // then
         verify(runningRecordRepository).save(runningRecord);
         assertEquals(responseDto, result);
+        assertTrue(user.isRunning());
     }
 
     @Test
@@ -98,6 +99,7 @@ public class RunningRecordServiceTest {
 
         RunningRecord runningRecord = new RunningRecord();
         User user = new User();
+        user.setRunning(true);
         runningRecord.setUser(user);
         RunningRecordResponseDto responseDto = new RunningRecordResponseDto();
 
@@ -115,6 +117,7 @@ public class RunningRecordServiceTest {
         verify(runningRecordItemRepository).saveAll(anyList());
         verify(gpsCoordinateRepository).saveAll(anyList());
         assertEquals(responseDto, result);
+        assertFalse(user.isRunning());
     }
 
     @Test
