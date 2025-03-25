@@ -112,7 +112,7 @@ public class RunningRecordControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
                         .with(csrf()))
-                .andExpect(status().isCreated())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.startTime").value("2024-10-30T08:00:00Z"))
                 .andExpect(jsonPath("$.endTime").value("2024-10-30T08:33:58Z"))

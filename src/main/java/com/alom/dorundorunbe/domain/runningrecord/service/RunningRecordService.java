@@ -62,6 +62,7 @@ public class RunningRecordService {
     @Transactional
     public RunningRecordResponseDto saveRunningRecord(RunningRecordStartDto startDto){
         User user = userService.findById(startDto.getUserId());
+        user.setRunning(true);
         RunningRecord runningRecord = runningRecordMapper.toEntityFromStartDto(startDto);
         runningRecord.setUser(user);
         runningRecord.setRunning(true);
@@ -76,6 +77,7 @@ public class RunningRecordService {
         runningRecordMapper.updateFromEndDto(endDto, runningRecord);
         runningRecord.calculatePace();
         runningRecord.setRunning(false);
+        runningRecord.getUser().setRunning(false);
         runningRecordRepository.save(runningRecord);
         setEquippedItems(runningRecord);
         setGpsCoordinate(runningRecord, endDto.getGpsCoordinates());

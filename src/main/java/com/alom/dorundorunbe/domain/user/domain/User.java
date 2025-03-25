@@ -57,6 +57,8 @@ public class User extends BaseEntity {
     // 랭킹 포인트
     private double lp;
 
+    @Column(nullable = false)
+    private boolean isRunning = false;
 
     @Column(nullable = false)
     private boolean isRankingParticipated;
