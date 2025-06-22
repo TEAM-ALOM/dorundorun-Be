@@ -88,7 +88,6 @@ public class DoodleControllerTest {
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
                 .maxParticipant(20)
-                .userId(user.getId())
                 .build();
 
         doodleResponseDto = DoodleResponseDto.builder()
@@ -107,18 +106,25 @@ public class DoodleControllerTest {
     @Test
     @DisplayName("Post /create/{userId} : Doodle을 생성한다.")
     @WithMockUser(username = "runner123", roles = {"USER"})
-    public void createDoodle() throws Exception{
-        when(doodleService.createDoodle(any(DoodleRequestDto.class)
-                )).thenReturn(DoodleResponseDto.from(doodle));
+    public void createDoodle() throws Exception {
+        // given
+        when(doodleService.createDoodle(eq(1L), any(DoodleRequestDto.class)))
+                .thenReturn(doodleResponseDto);
 
+        // when & then
         mockMvc.perform(post("/doodle/create/{userId}", 1L)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(doodleRequestDto))
-                .with(csrf()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)  // Accept 헤더 추가
+                        .content(new ObjectMapper().writeValueAsString(doodleRequestDto))
+                        .with(csrf()))
                 .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))  // 응답 타입 검증
                 .andExpect(jsonPath("$.name").value("testDoodle"))
-                .andExpect(jsonPath("$.weeklyGoalDistance").value(1.0)
-        );
+                .andExpect(jsonPath("$.weeklyGoalDistance").value(1.0));
+
+        // verify
+        verify(doodleService, times(1))
+                .createDoodle(eq(1L), any(DoodleRequestDto.class));
     }
 
     @Test
@@ -206,7 +212,6 @@ public class DoodleControllerTest {
                 .weeklyGoalCadence(3.0)
                 .weeklyGoalPace(4.0)
                 .maxParticipant(25)
-                .userId(1L)
                 .build();
 
         DoodleResponseDto updatedDoodleResponse = DoodleResponseDto.builder()
