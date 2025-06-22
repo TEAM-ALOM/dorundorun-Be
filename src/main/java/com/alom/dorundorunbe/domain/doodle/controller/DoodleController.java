@@ -26,8 +26,8 @@ public class DoodleController implements DoodleControllerDocs{
     private final UserDoodleService userDoodleService;
 
     @PostMapping("/create/{userId}")
-    public ResponseEntity<DoodleResponseDto> createDoodle(@RequestBody DoodleRequestDto doodleRequestDto) {
-        DoodleResponseDto doodleResponseDto = doodleService.createDoodle(doodleRequestDto);
+    public ResponseEntity<DoodleResponseDto> createDoodle(@PathVariable Long userId, @RequestBody DoodleRequestDto doodleRequestDto) {
+        DoodleResponseDto doodleResponseDto = doodleService.createDoodle(userId, doodleRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(doodleResponseDto);
     }
 
@@ -38,7 +38,8 @@ public class DoodleController implements DoodleControllerDocs{
 
     @GetMapping("/{doodleId}")
     public ResponseEntity<DoodleResponseDto> getDoodleById(@PathVariable("doodleId") Long doodleId) {
-        return ResponseEntity.ok(doodleService.getDoodleById(doodleId));
+        DoodleResponseDto responseDto = doodleService.getDoodleById(doodleId);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PutMapping("/{doodleId}")
