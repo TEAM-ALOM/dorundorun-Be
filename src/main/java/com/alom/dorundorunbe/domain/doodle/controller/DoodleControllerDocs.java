@@ -39,7 +39,7 @@ public interface DoodleControllerDocs {
                     - `DoodleResponseDto` : 생성된 두들런 정보
                     """
     )
-    ResponseEntity<DoodleResponseDto> createDoodle(@RequestBody DoodleRequestDto requestDto);
+    ResponseEntity<DoodleResponseDto> createDoodle(@PathVariable Long userId, @RequestBody DoodleRequestDto requestDto);
 
     @Operation(
             summary = "두들런 전체 조회",

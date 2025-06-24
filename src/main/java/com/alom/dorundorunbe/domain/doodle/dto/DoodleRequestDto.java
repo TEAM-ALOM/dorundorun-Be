@@ -43,7 +43,4 @@ public class DoodleRequestDto {
     private boolean isGoalActive;
 
     private Tier requiredTier;
-
-    private Long userId;
-
 }

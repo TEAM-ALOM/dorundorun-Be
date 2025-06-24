@@ -29,6 +29,9 @@ public enum ErrorCode {
   DOODLE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 방입니다."),
   USER_NOT_FOUND(HttpStatus.NOT_FOUND, "유저를 찾을 수 없습니다."),
 
+  //UserDoodle
+    USER_DOODLE_NOT_FOUND(HttpStatus.NOT_FOUND, "유저의 두들 기록을 찾을 수 없습니다."),
+
   // 알려지지 않은 문제
   UNKNOWN(HttpStatus.INTERNAL_SERVER_ERROR, "알려지지 않은 문제가 발생하였습니다."),
   // 입력 값 오류

@@ -11,6 +11,8 @@ import com.alom.dorundorunbe.domain.runningrecord.domain.RunningRecord;
 import com.alom.dorundorunbe.domain.runningrecord.repository.RunningRecordRepository;
 import com.alom.dorundorunbe.domain.user.domain.User;
 import com.alom.dorundorunbe.domain.user.repository.UserRepository;
+import com.alom.dorundorunbe.global.exception.BusinessException;
+import com.alom.dorundorunbe.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -37,8 +39,8 @@ public class UserDoodleService {
     }
 
     public UserDoodle createUserDoodle(Long doodleId, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("USER NOT FOUND"));
-        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new IllegalArgumentException("DOODLE NOT FOUND"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
 
         initializeParticipantsList(doodle);
 
@@ -59,8 +61,8 @@ public class UserDoodleService {
 
     public UserDoodle addParticipantsToUserDoodle(Long doodleId, Long userId) {
         //참가자가 방에 들어올때마다 호출됨
-        User user = userRepository.findById(doodleId).orElseThrow(() -> new IllegalArgumentException("USER NOT FOUND"));
-        Doodle doodle = doodleRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("DOODLE NOT FOUND"));
+        User user = userRepository.findById(doodleId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        Doodle doodle = doodleRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
 
         initializeParticipantsList(doodle);
 
@@ -123,9 +125,9 @@ public class UserDoodleService {
 
     //목표 전체 달성 여부 확인
     public UserDoodleStatus isGoalAchieved(Long userId, Long doodleId) {
-        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException("Doodle not found"));
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).orElseThrow(() -> new RuntimeException("UserDoodle not found"));
+        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).orElseThrow(() -> new BusinessException(ErrorCode.USER_DOODLE_NOT_FOUND));
         List<RunningRecord> runningRecords = runningRecordRepository.findAllByUser(user);
         boolean isAchieved = ( //심박존, 위치 확인 추가 필요
                 (getWeeklyTotalDistance(runningRecords) >= doodle.getWeeklyGoalDistance()) &&
@@ -142,7 +144,7 @@ public class UserDoodleService {
 
     //유저가 참여한 두들런 중 포인트 상위 10개 방 반환
     public List<Doodle> getTop10DoodlePointsForUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         Pageable pageable = PageRequest.of(0, 10);
 //        return topDoodles.stream()
 //                .map(Doodle::getDoodlePoint)

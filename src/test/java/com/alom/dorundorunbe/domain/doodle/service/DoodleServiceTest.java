@@ -143,7 +143,6 @@ public class DoodleServiceTest {
                 .weeklyGoalPace(3.0)
                 .weeklyGoalHeartRateZone(3)
                 .maxParticipant(10)
-                .userId(1L)
                 .isGoalActive(true)
                 .isPublic(true)
                 .isRunning(true)
@@ -172,6 +171,7 @@ public class DoodleServiceTest {
                 .requiredTier(Tier.STARTER)
                 .build();
         when(doodleRepository.save(any(Doodle.class))).thenReturn(savedDoodle);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         // mock userDoodleService
         UserDoodle userDoodle = new UserDoodle();
@@ -181,7 +181,7 @@ public class DoodleServiceTest {
         when(userDoodleService.createUserDoodle(1L, 1L)).thenReturn(userDoodle);
 
         // service call
-        DoodleResponseDto responseDto = doodleService.createDoodle(doodleRequestDto);
+        DoodleResponseDto responseDto = doodleService.createDoodle(user.getId(), doodleRequestDto);
 
         // Assertions
         assertNotNull(responseDto);

@@ -10,6 +10,8 @@ import com.alom.dorundorunbe.domain.doodle.domain.UserDoodle;
 import com.alom.dorundorunbe.domain.doodle.domain.Doodle;
 import com.alom.dorundorunbe.domain.doodle.repository.DoodleRepository;
 import com.alom.dorundorunbe.global.config.RedisConfig;
+import com.alom.dorundorunbe.global.exception.BusinessException;
+import com.alom.dorundorunbe.global.exception.ErrorCode;
 import com.alom.dorundorunbe.global.util.CustomRandomUtil;
 import com.alom.dorundorunbe.global.util.RedisUtil;
 import jakarta.transaction.Transactional;
@@ -39,7 +41,9 @@ public class DoodleService {
     private static final String INVITE_LINK_PREFIX = "doodleId=%d";
 
     @Transactional
-    public DoodleResponseDto createDoodle(DoodleRequestDto doodleRequestDto) { //doodle 생성 기능
+    public DoodleResponseDto createDoodle(Long userId, DoodleRequestDto doodleRequestDto) { //doodle 생성 기능
+        User user = userRepository.findById(userId).orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
         //Doodle 생성
         Doodle doodle = Doodle.builder()
                 .name(doodleRequestDto.getName())
@@ -83,7 +87,7 @@ public class DoodleService {
         }
 
         Doodle savedDoodle = doodleRepository.save(doodle);
-        UserDoodle userDoodle = userDoodleService.createUserDoodle(savedDoodle.getId(), doodleRequestDto.getUserId());
+        UserDoodle userDoodle = userDoodleService.createUserDoodle(savedDoodle.getId(), userId);
 
         savedDoodle.getParticipants().add(userDoodle);
 
@@ -102,12 +106,12 @@ public class DoodleService {
     public DoodleResponseDto getDoodleById(Long doodleId) { //doodle 상세 조회
         Optional<Doodle> doodle = doodleRepository.findById(doodleId);
         return doodle.map(DoodleResponseDto::from)
-                .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
     }
 
     public void deleteDoodle(Long doodleId) {
         Doodle doodle = doodleRepository.findById(doodleId)
-                .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
 
         doodleRepository.delete(doodle);
     }
@@ -115,7 +119,7 @@ public class DoodleService {
     @Transactional
     public DoodleResponseDto updateDoodle(Long doodleId, DoodleRequestDto doodleRequestDto) {
         Doodle doodle = doodleRepository.findById(doodleId)
-                .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
         doodle.setName(doodleRequestDto.getName());
         doodle.setMaxParticipant(doodleRequestDto.getMaxParticipant());
         doodle.setRunning(doodleRequestDto.isRunning());
@@ -155,9 +159,10 @@ public class DoodleService {
         return DoodleResponseDto.from(updatedDoodle);
     }
 
+    //doodleid =1로 두고 테스트해도 doodle not found에러 발생. 고치기
     @Transactional
     public DoodleResponseDto addParticipantToDoodle(Long doodleId, Long userId) { //참가자 추가
-        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new RuntimeException("Doodle not found"));
+        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
         //비밀번호 검증
 //        if (!passwordEncoder.matches(password, doodle.getPassword())) {
 //            throw new IllegalArgumentException("Wrong password");
@@ -180,12 +185,11 @@ public class DoodleService {
     @Transactional
     public DoodleResponseDto deleteParticipant(Long doodleId, Long userId) {
         Doodle doodle = doodleRepository.findById(doodleId).
-                orElseThrow(() -> new RuntimeException("NOT FOUND"));
+                orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
         User user = userRepository.findById(userId).
-                orElseThrow(() -> new RuntimeException("NOT FOUND"));
+                orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user).
-                orElseThrow(() -> new RuntimeException("유저가 해당 Doodle에 존재하지 않습니다."));
-
+                orElseThrow(() -> new BusinessException(ErrorCode.USER_DOODLE_NOT_FOUND));
 
         userDoodleRepository.delete(userDoodle);
         doodle.getParticipants().remove(userDoodle);
@@ -195,7 +199,7 @@ public class DoodleService {
 
     public List<UserDoodleDto> getParticipants(Long doodleId) {
         Doodle doodle = doodleRepository.findById(doodleId)
-                .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
 
         return doodle.getParticipants().stream()
                 .map(UserDoodleDto::from)
@@ -206,11 +210,11 @@ public class DoodleService {
     @Transactional
     public UserDoodleDto updateParticipantStatus(Long doodleId, Long userId, UserDoodleStatus status) {
         Doodle doodle = doodleRepository.findById(doodleId).
-                orElseThrow(() -> new RuntimeException("NOT FOUND"));
+                orElseThrow(() -> new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
         User user = userRepository.findById(userId).
-                orElseThrow(() -> new RuntimeException("NOT FOUND"));
+                orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         UserDoodle userDoodle = userDoodleRepository.findByDoodleAndUser(doodle, user)
-                .orElseThrow(() -> new IllegalArgumentException("NOT FOUND"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_DOODLE_NOT_FOUND));
         userDoodle.setStatus(status);
         userDoodleRepository.save(userDoodle);
         return UserDoodleDto.from(userDoodle);
@@ -237,8 +241,8 @@ public class DoodleService {
      */
     @Transactional
     public void addPointsToDoodle(Long doodleId, Long userId, double doodlePoints){
-        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(()->new RuntimeException("Doodle not found"));
-        User user = userRepository.findById(userId).orElseThrow(()->new RuntimeException("User not found"));
+        Doodle doodle = doodleRepository.findById(doodleId).orElseThrow(()->new BusinessException(ErrorCode.DOODLE_NOT_FOUND));
+        User user = userRepository.findById(userId).orElseThrow(()->new BusinessException(ErrorCode.USER_NOT_FOUND));
         doodle.setDoodlePoint(doodlePoints);
         doodleRepository.save(doodle);
     }
